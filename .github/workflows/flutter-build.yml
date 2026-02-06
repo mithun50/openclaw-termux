@@ -1,0 +1,191 @@
+name: Build Flutter APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'flutter_app/**'
+      - 'scripts/fetch-proot-binaries.sh'
+      - 'scripts/build-apk.sh'
+      - '.github/workflows/flutter-build.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'flutter_app/**'
+      - 'scripts/fetch-proot-binaries.sh'
+      - 'scripts/build-apk.sh'
+      - '.github/workflows/flutter-build.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: stable
+          cache: true
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('flutter_app/android/**/*.gradle*', 'flutter_app/android/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            flutter_app/.dart_tool
+          key: pub-${{ runner.os }}-${{ hashFiles('flutter_app/pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: Fetch PRoot binaries
+        run: bash scripts/fetch-proot-binaries.sh
+
+      - name: Verify PRoot binaries
+        run: |
+          echo "Checking jniLibs contents..."
+          for abi in arm64-v8a armeabi-v7a x86_64; do
+            FILE="flutter_app/android/app/jniLibs/${abi}/libproot.so"
+            if [ ! -f "$FILE" ]; then
+              echo "ERROR: Missing $FILE"
+              exit 1
+            fi
+            SIZE=$(stat -c%s "$FILE")
+            if [ "$SIZE" -lt 1000 ]; then
+              echo "WARN: $FILE looks like a placeholder (${SIZE} bytes)"
+            else
+              echo "OK: $FILE (${SIZE} bytes)"
+            fi
+          done
+
+      - name: Get Flutter dependencies
+        working-directory: flutter_app
+        run: flutter pub get
+
+      - name: Analyze Dart code
+        working-directory: flutter_app
+        run: flutter analyze --no-fatal-infos
+        continue-on-error: true
+
+      - name: Build fat APK (all ABIs)
+        working-directory: flutter_app
+        run: flutter build apk --release
+
+      - name: Build per-ABI APKs
+        working-directory: flutter_app
+        run: flutter build apk --release --split-per-abi
+
+      - name: Rename and collect APKs
+        id: apks
+        run: |
+          VERSION=$(grep '^version:' flutter_app/pubspec.yaml | awk '{print $2}' | cut -d'+' -f1)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          mkdir -p artifacts
+
+          # Fat APK
+          cp flutter_app/build/app/outputs/flutter-apk/app-release.apk \
+             "artifacts/OpenClawd-v${VERSION}-universal.apk"
+
+          # Per-ABI APKs
+          for abi in arm64-v8a armeabi-v7a x86_64; do
+            SRC="flutter_app/build/app/outputs/flutter-apk/app-${abi}-release.apk"
+            if [ -f "$SRC" ]; then
+              cp "$SRC" "artifacts/OpenClawd-v${VERSION}-${abi}.apk"
+            fi
+          done
+
+          echo "Built APKs:"
+          ls -lh artifacts/
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: openclawd-apks
+          path: artifacts/*.apk
+          retention-days: 30
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Download APK artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: openclawd-apks
+          path: artifacts
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(grep '^version:' flutter_app/pubspec.yaml | awk '{print $2}' | cut -d'+' -f1)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          # Check if this tag already exists
+          if git ls-remote --tags origin "refs/tags/v${VERSION}-apk" | grep -q .; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create Release
+        if: steps.version.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}-apk
+          name: OpenClawd APK v${{ steps.version.outputs.version }}
+          body: |
+            ## OpenClawd Android APK v${{ steps.version.outputs.version }}
+
+            Standalone Android app — no Termux required.
+
+            ### Downloads
+            | File | Description |
+            |------|-------------|
+            | `OpenClawd-v${{ steps.version.outputs.version }}-arm64-v8a.apk` | Most modern Android phones (recommended) |
+            | `OpenClawd-v${{ steps.version.outputs.version }}-armeabi-v7a.apk` | Older 32-bit ARM devices |
+            | `OpenClawd-v${{ steps.version.outputs.version }}-x86_64.apk` | Emulators / x86 devices |
+            | `OpenClawd-v${{ steps.version.outputs.version }}-universal.apk` | All architectures (larger) |
+
+            ### First Run
+            1. Install the APK
+            2. Follow the setup wizard (downloads ~500MB Ubuntu rootfs)
+            3. Start the gateway from the dashboard
+            4. Access the web dashboard at `http://127.0.0.1:18789`
+
+            ### Requirements
+            - Android 7.0+ (API 24)
+            - ~500MB free storage for initial setup
+            - Internet connection for first-time setup
+          files: artifacts/*.apk
+          draft: false
+          prerelease: false

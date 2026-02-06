@@ -1,0 +1,22 @@
+# Flutter/Dart
+.dart_tool/
+.packages
+.pub/
+build/
+*.iml
+
+# Android
+android/.gradle/
+android/app/build/
+android/local.properties
+android/key.properties
+*.jks
+*.keystore
+
+# PRoot binaries (fetched by script, not committed)
+android/app/jniLibs/*/libproot.so
+
+# IDE
+.idea/
+.vscode/
+*.swp
