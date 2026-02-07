@@ -195,8 +195,40 @@ class BootstrapManager(
             throw RuntimeException("Extraction failed: bash not found in rootfs")
         }
 
+        // Post-extraction: configure rootfs for proot compatibility
+        configureRootfs()
+
         // Clean up tarball
         File(tarPath).delete()
+    }
+
+    /**
+     * Write configuration files that make the rootfs work correctly under proot.
+     * Called automatically after extraction.
+     */
+    private fun configureRootfs() {
+        // 1. Disable apt sandboxing — proot fakes UID 0 via ptrace but cannot
+        //    intercept setresuid/setresgid, so apt's _apt user privilege drop
+        //    fails with "Operation not permitted". Tell apt to stay as root.
+        val aptConfDir = File("$rootfsDir/etc/apt/apt.conf.d")
+        aptConfDir.mkdirs()
+        File(aptConfDir, "01-openclawd-proot").writeText(
+            "APT::Sandbox::User \"root\";\n"
+        )
+
+        // 2. Ensure /etc/machine-id exists (dpkg triggers and systemd utils need it)
+        val machineId = File("$rootfsDir/etc/machine-id")
+        if (!machineId.exists()) {
+            machineId.parentFile?.mkdirs()
+            machineId.writeText("10000000000000000000000000000000\n")
+        }
+
+        // 3. Ensure policy-rc.d prevents services from auto-starting during install
+        //    (they'd fail inside proot anyway)
+        val policyRc = File("$rootfsDir/usr/sbin/policy-rc.d")
+        policyRc.parentFile?.mkdirs()
+        policyRc.writeText("#!/bin/sh\nexit 101\n")
+        policyRc.setExecutable(true, false)
     }
 
     private fun deleteRecursively(file: File) {

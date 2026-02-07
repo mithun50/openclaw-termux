@@ -32,7 +32,7 @@ class ProcessManager(
             "-b", "$homeDir:/root/home",
             "-w", "/root",
             "/bin/bash", "-c",
-            "export NODE_OPTIONS=\"$nodeOptions\" && export HOME=/root && export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin && $command"
+            "export NODE_OPTIONS=\"$nodeOptions\" && export HOME=/root && export DEBIAN_FRONTEND=noninteractive && export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin && $command"
         )
     }
 
