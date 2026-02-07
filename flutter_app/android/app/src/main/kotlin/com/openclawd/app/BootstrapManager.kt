@@ -50,70 +50,36 @@ class BootstrapManager(
         val rootfs = File(rootfsDir)
         rootfs.mkdirs()
 
-        // Android's tar can't handle:
-        // 1. Hard links (no support in app storage)
-        // 2. Symlinks to absolute paths (rejects as "not under" extraction dir)
-        //
-        // Solution: use proot with --link2symlink to extract.
-        // proot translates all paths and converts hard links to symlinks.
+        // Use proot --link2symlink to wrap tar, exactly like proot-distro does.
+        // proot intercepts syscalls so tar's hard links become symlinks and
+        // absolute symlink targets are handled correctly.
+        // No -r flag needed — proot just wraps the host tar binary.
         val prootPath = "$nativeLibDir/libproot.so"
 
         val pb = ProcessBuilder(
             prootPath,
-            "-0",
             "--link2symlink",
-            "-r", rootfsDir,
-            "-b", "/dev",
-            "-b", "/proc",
-            "-w", "/",
-            "/bin/sh", "-c",
-            "tar xzf '$tarPath' -C / --no-same-owner 2>&1 || true"
+            "tar", "-C", rootfsDir,
+            "--warning=no-unknown-keyword",
+            "--delay-directory-restore",
+            "--preserve-permissions",
+            "--no-same-owner",
+            "-xzf", tarPath,
+            "--exclude=dev"
         )
         pb.environment()["PROOT_TMP_DIR"] = tmpDir
+        pb.environment()["PROOT_NO_SECCOMP"] = "1"
         pb.redirectErrorStream(true)
 
-        // First attempt: extract with proot (needs /bin/sh to exist in rootfs)
-        // But on first extract the rootfs is empty, so proot can't run /bin/sh.
-        // Fallback: plain tar, ignoring errors, then verify.
-        val plainProcess = ProcessBuilder(
-            "tar", "xzf", tarPath, "-C", rootfsDir,
-            "--no-same-owner", "--no-same-permissions", "--warning=no-unknown-keyword"
-        )
-        plainProcess.redirectErrorStream(true)
+        val process = pb.start()
+        val output = process.inputStream.bufferedReader().readText()
+        val exitCode = process.waitFor()
 
-        val proc = plainProcess.start()
-        // Drain output to prevent blocking
-        val output = proc.inputStream.bufferedReader().readText()
-        proc.waitFor()
-        // tar will exit non-zero due to symlink/hardlink errors — that's expected
-
-        // Verify extraction worked (bin/bash must exist)
+        // Verify extraction worked
         if (!File("$rootfsDir/bin/bash").exists()) {
-            throw RuntimeException("Rootfs extraction failed: /bin/bash not found after tar")
-        }
-
-        // Now that rootfs has /bin/sh, use proot to fix symlinks that tar skipped.
-        // Re-extract just the problematic entries with proot handling links.
-        try {
-            if (File(tarPath).exists()) {
-                val fixProc = ProcessBuilder(
-                    prootPath,
-                    "-0",
-                    "--link2symlink",
-                    "-r", rootfsDir,
-                    "-b", "$tarPath:$tarPath",
-                    "-w", "/",
-                    "/bin/tar", "xzf", tarPath, "-C", "/",
-                    "--no-same-owner", "--overwrite"
-                )
-                fixProc.environment()["PROOT_TMP_DIR"] = tmpDir
-                fixProc.redirectErrorStream(true)
-                val fixProcess = fixProc.start()
-                fixProcess.inputStream.bufferedReader().readText()
-                fixProcess.waitFor()
-            }
-        } catch (_: Exception) {
-            // Best effort — the initial extraction got the essential files
+            throw RuntimeException(
+                "Rootfs extraction failed (code $exitCode): /bin/bash not found. Output: $output"
+            )
         }
 
         // Clean up tarball
