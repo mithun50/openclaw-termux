@@ -50,18 +50,50 @@ class BootstrapManager(
         val rootfs = File(rootfsDir)
         rootfs.mkdirs()
 
+        // Android's filesystem doesn't support hard links in app storage.
+        // tar will report errors for hard links (e.g. perl5.38.2 -> perl)
+        // but the actual files are still extracted. We collect stderr and
+        // only fail if /bin/bash wasn't extracted (real failure).
         val process = ProcessBuilder(
-            "tar", "xzf", tarPath, "-C", rootfsDir, "--strip-components=0"
+            "tar", "xzf", tarPath, "-C", rootfsDir,
+            "--no-same-owner", "--no-same-permissions"
         ).redirectErrorStream(true).start()
 
-        val exitCode = process.waitFor()
-        if (exitCode != 0) {
-            val error = process.inputStream.bufferedReader().readText()
-            throw RuntimeException("Rootfs extraction failed (code $exitCode): $error")
+        val output = process.inputStream.bufferedReader().readText()
+        process.waitFor()
+
+        // Fix hard links that failed: create symlinks instead
+        fixFailedHardLinks(output)
+
+        // Verify extraction actually worked (bin/bash must exist)
+        if (!File("$rootfsDir/bin/bash").exists()) {
+            throw RuntimeException("Rootfs extraction failed: /bin/bash not found. tar output: $output")
         }
 
         // Clean up tarball
         File(tarPath).delete()
+    }
+
+    private fun fixFailedHardLinks(tarOutput: String) {
+        // Parse "tar: can't link 'X' -> 'Y': Permission denied" and create symlinks
+        val linkPattern = Regex("""can't link '([^']+)' -> '([^']+)'""")
+        for (match in linkPattern.findAll(tarOutput)) {
+            val source = match.groupValues[1]  // the new link that failed
+            val target = match.groupValues[2]  // the existing file
+            val sourceFile = File("$rootfsDir/$source")
+            val targetFile = File("$rootfsDir/$target")
+
+            if (targetFile.exists() && !sourceFile.exists()) {
+                try {
+                    // Create parent dirs if needed
+                    sourceFile.parentFile?.mkdirs()
+                    // Copy the file since symlinks may also not work
+                    targetFile.copyTo(sourceFile, overwrite = true)
+                } catch (_: Exception) {
+                    // Best effort — non-critical files like perl aliases
+                }
+            }
+        }
     }
 
     fun installBionicBypass() {
