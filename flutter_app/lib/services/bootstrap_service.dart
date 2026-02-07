@@ -85,6 +85,9 @@ class BootstrapService {
       ));
 
       // Step 3: Install Node.js (split into sub-steps for better error reporting)
+      // In proot, dpkg post-install scripts often fail on operations like
+      // mknod, chown, service start etc. We use aggressive forcing and
+      // recovery steps to push through these expected failures.
       onProgress(const SetupState(
         step: SetupStep.installingNode,
         progress: 0.0,
@@ -97,9 +100,8 @@ class BootstrapService {
         progress: 0.1,
         message: 'Fixing any broken packages...',
       ));
-      // dpkg --configure -a in case a previous run was interrupted
       await NativeBridge.runInProot(
-        'dpkg --configure -a || true',
+        'dpkg --configure -a --force-all || true',
       );
 
       onProgress(const SetupState(
@@ -107,8 +109,18 @@ class BootstrapService {
         progress: 0.2,
         message: 'Installing base packages...',
       ));
+      // Use --force-all to push through post-install script failures,
+      // then recover with dpkg --configure
       await NativeBridge.runInProot(
-        'apt-get install -y --no-install-recommends ca-certificates curl gnupg',
+        'apt-get -o Dpkg::Options::="--force-all" install -y '
+        '--no-install-recommends ca-certificates curl gnupg || '
+        'dpkg --configure -a --force-all || true',
+      );
+      // Verify key packages are installed
+      await NativeBridge.runInProot(
+        'dpkg -s ca-certificates curl gnupg > /dev/null 2>&1 || '
+        'apt-get -o Dpkg::Options::="--force-all" install -y '
+        '--no-install-recommends --fix-broken ca-certificates curl gnupg',
       );
 
       onProgress(const SetupState(
@@ -127,7 +139,15 @@ class BootstrapService {
         message: 'Installing Node.js...',
       ));
       await NativeBridge.runInProot(
-        'apt-get install -y --no-install-recommends nodejs',
+        'apt-get -o Dpkg::Options::="--force-all" install -y '
+        '--no-install-recommends nodejs || '
+        'dpkg --configure -a --force-all || true',
+      );
+      // Verify nodejs is actually installed
+      await NativeBridge.runInProot(
+        'dpkg -s nodejs > /dev/null 2>&1 || '
+        'apt-get -o Dpkg::Options::="--force-all" install -y '
+        '--no-install-recommends --fix-broken nodejs',
       );
 
       onProgress(const SetupState(

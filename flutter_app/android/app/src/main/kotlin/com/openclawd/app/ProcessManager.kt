@@ -96,7 +96,7 @@ class ProcessManager(
         val exitCode = process.exitValue()
         if (exitCode != 0) {
             throw RuntimeException(
-                "Command failed (exit code $exitCode): ${output.toString().takeLast(500)}"
+                "Command failed (exit code $exitCode): ${output.toString().takeLast(2000)}"
             )
         }
 
