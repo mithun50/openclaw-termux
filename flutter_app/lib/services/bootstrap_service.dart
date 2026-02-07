@@ -94,11 +94,21 @@ class BootstrapService {
 
       onProgress(const SetupState(
         step: SetupStep.installingNode,
+        progress: 0.1,
+        message: 'Fixing any broken packages...',
+      ));
+      // dpkg --configure -a in case a previous run was interrupted
+      await NativeBridge.runInProot(
+        'dpkg --configure -a || true',
+      );
+
+      onProgress(const SetupState(
+        step: SetupStep.installingNode,
         progress: 0.2,
         message: 'Installing base packages...',
       ));
       await NativeBridge.runInProot(
-        'apt-get install -y ca-certificates curl gnupg',
+        'apt-get install -y --no-install-recommends ca-certificates curl gnupg',
       );
 
       onProgress(const SetupState(
@@ -116,7 +126,9 @@ class BootstrapService {
         progress: 0.6,
         message: 'Installing Node.js...',
       ));
-      await NativeBridge.runInProot('apt-get install -y nodejs');
+      await NativeBridge.runInProot(
+        'apt-get install -y --no-install-recommends nodejs',
+      );
 
       onProgress(const SetupState(
         step: SetupStep.installingNode,

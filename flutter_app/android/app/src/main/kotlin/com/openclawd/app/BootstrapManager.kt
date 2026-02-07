@@ -215,22 +215,46 @@ class BootstrapManager(
         val aptConfDir = File("$rootfsDir/etc/apt/apt.conf.d")
         aptConfDir.mkdirs()
         File(aptConfDir, "01-openclawd-proot").writeText(
-            "APT::Sandbox::User \"root\";\n"
+            "APT::Sandbox::User \"root\";\n" +
+            // Pass dpkg options through apt to tolerate proot failures
+            "Dpkg::Options { \"--force-confnew\"; \"--force-overwrite\"; };\n"
         )
 
-        // 2. Ensure /etc/machine-id exists (dpkg triggers and systemd utils need it)
+        // 2. Configure dpkg for proot compatibility
+        //    - force-unsafe-io: skip fsync/sync_file_range (may ENOSYS in proot)
+        //    - no-debsig: skip signature verification
+        val dpkgConfDir = File("$rootfsDir/etc/dpkg/dpkg.cfg.d")
+        dpkgConfDir.mkdirs()
+        File(dpkgConfDir, "01-openclawd-proot").writeText(
+            "force-unsafe-io\n" +
+            "no-debsig\n"
+        )
+
+        // 3. Ensure /etc/machine-id exists (dpkg triggers and systemd utils need it)
         val machineId = File("$rootfsDir/etc/machine-id")
         if (!machineId.exists()) {
             machineId.parentFile?.mkdirs()
             machineId.writeText("10000000000000000000000000000000\n")
         }
 
-        // 3. Ensure policy-rc.d prevents services from auto-starting during install
+        // 4. Ensure policy-rc.d prevents services from auto-starting during install
         //    (they'd fail inside proot anyway)
         val policyRc = File("$rootfsDir/usr/sbin/policy-rc.d")
         policyRc.parentFile?.mkdirs()
         policyRc.writeText("#!/bin/sh\nexit 101\n")
         policyRc.setExecutable(true, false)
+
+        // 5. Create a stub for /usr/sbin/groupadd and /usr/sbin/useradd
+        //    Post-install scripts often try to create system users/groups which
+        //    fails in proot. Provide no-op stubs that always succeed.
+        for (cmd in listOf("groupadd", "useradd", "usermod")) {
+            val stub = File("$rootfsDir/usr/local/sbin/$cmd")
+            stub.parentFile?.mkdirs()
+            if (!stub.exists()) {
+                stub.writeText("#!/bin/sh\n# proot stub - operations faked by proot -0\nexit 0\n")
+                stub.setExecutable(true, false)
+            }
+        }
     }
 
     private fun deleteRecursively(file: File) {
