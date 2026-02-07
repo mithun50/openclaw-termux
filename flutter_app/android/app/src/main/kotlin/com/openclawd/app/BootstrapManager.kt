@@ -14,10 +14,24 @@ class BootstrapManager(
     private val tmpDir get() = "$filesDir/tmp"
     private val homeDir get() = "$filesDir/home"
     private val configDir get() = "$filesDir/config"
+    private val libDir get() = "$filesDir/lib"
 
     fun setupDirectories() {
-        listOf(rootfsDir, tmpDir, homeDir, configDir, "$homeDir/.openclawd").forEach {
+        listOf(rootfsDir, tmpDir, homeDir, configDir, "$homeDir/.openclawd", libDir).forEach {
             File(it).mkdirs()
+        }
+        // Termux's proot links against libtalloc.so.2 but Android extracts it
+        // as libtalloc.so (jniLibs naming convention). Create a copy with the
+        // correct SONAME so the dynamic linker finds it.
+        setupLibtalloc()
+    }
+
+    private fun setupLibtalloc() {
+        val source = File("$nativeLibDir/libtalloc.so")
+        val target = File("$libDir/libtalloc.so.2")
+        if (source.exists() && !target.exists()) {
+            source.copyTo(target)
+            target.setExecutable(true)
         }
     }
 
@@ -71,6 +85,7 @@ class BootstrapManager(
         pb.environment()["PROOT_NO_SECCOMP"] = "1"
         pb.environment()["PROOT_LOADER"] = "$nativeLibDir/libprootloader.so"
         pb.environment()["PROOT_LOADER_32"] = "$nativeLibDir/libprootloader32.so"
+        pb.environment()["LD_LIBRARY_PATH"] = "$libDir:$nativeLibDir"
         pb.redirectErrorStream(true)
 
         val process = pb.start()
