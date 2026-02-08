@@ -206,7 +206,12 @@ class BootstrapService {
         progress: 0.9,
         message: 'Verifying Node.js...',
       ));
-      await NativeBridge.runInProot('node --version && npm --version');
+      // npm's shebang is #!/usr/bin/env node — env needs to fork+exec
+      // node, which fails in proot (level 2+ fork). Call node directly.
+      final npmCli = '/usr/lib/node_modules/npm/bin/npm-cli.js';
+      await NativeBridge.runInProot(
+        'node --version && node $npmCli --version',
+      );
       onProgress(const SetupState(
         step: SetupStep.installingNode,
         progress: 1.0,
@@ -219,14 +224,16 @@ class BootstrapService {
         progress: 0.0,
         message: 'Installing OpenClaw (this may take a few minutes)...',
       ));
-      await NativeBridge.runInProot('npm install -g openclaw');
+      await NativeBridge.runInProot('node $npmCli install -g openclaw');
 
       onProgress(const SetupState(
         step: SetupStep.installingOpenClaw,
         progress: 0.9,
         message: 'Verifying OpenClaw...',
       ));
-      await NativeBridge.runInProot('openclaw --version');
+      await NativeBridge.runInProot(
+        'node $npmCli list -g openclaw',
+      );
       onProgress(const SetupState(
         step: SetupStep.installingOpenClaw,
         progress: 1.0,
