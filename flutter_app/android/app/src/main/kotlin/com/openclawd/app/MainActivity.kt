@@ -131,6 +131,21 @@ class MainActivity : FlutterActivity() {
                         }
                     }.start()
                 }
+                "extractNodeTarball" -> {
+                    val tarPath = call.argument<String>("tarPath")
+                    if (tarPath != null) {
+                        Thread {
+                            try {
+                                bootstrapManager.extractNodeTarball(tarPath)
+                                runOnUiThread { result.success(true) }
+                            } catch (e: Exception) {
+                                runOnUiThread { result.error("NODE_EXTRACT_ERROR", e.message, null) }
+                            }
+                        }.start()
+                    } else {
+                        result.error("INVALID_ARGS", "tarPath required", null)
+                    }
+                }
                 else -> {
                     result.notImplemented()
                 }

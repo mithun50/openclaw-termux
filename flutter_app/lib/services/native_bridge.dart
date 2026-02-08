@@ -66,6 +66,10 @@ class NativeBridge {
     return await _channel.invokeMethod('extractDebPackages');
   }
 
+  static Future<bool> extractNodeTarball(String tarPath) async {
+    return await _channel.invokeMethod('extractNodeTarball', {'tarPath': tarPath});
+  }
+
   static Stream<String> get gatewayLogStream {
     return _eventChannel.receiveBroadcastStream().map((event) => event.toString());
   }

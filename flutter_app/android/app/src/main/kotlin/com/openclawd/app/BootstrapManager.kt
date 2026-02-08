@@ -626,6 +626,99 @@ class BootstrapManager(
         }
     }
 
+    /**
+     * Extract a Node.js binary tarball (.tar.xz) into the rootfs.
+     * The tarball contains node-v22.x.x-linux-arm64/ with bin/, lib/, etc.
+     * We extract its contents into /usr/local/ so node and npm are on PATH.
+     * This bypasses the NodeSource repo (curl/gpg fail in proot).
+     */
+    fun extractNodeTarball(tarPath: String) {
+        val destDir = File("$rootfsDir/usr/local")
+        destDir.mkdirs()
+
+        var entryCount = 0
+        try {
+            FileInputStream(tarPath).use { fis ->
+                BufferedInputStream(fis, 256 * 1024).use { bis ->
+                    XZCompressorInputStream(bis).use { xzis ->
+                        TarArchiveInputStream(xzis).use { tis ->
+                            var entry: TarArchiveEntry? = tis.nextEntry
+                            while (entry != null) {
+                                entryCount++
+                                val name = entry.name
+
+                                // Strip the top-level directory (node-v22.x.x-linux-arm64/)
+                                val slashIdx = name.indexOf('/')
+                                if (slashIdx < 0 || slashIdx == name.length - 1) {
+                                    entry = tis.nextEntry
+                                    continue
+                                }
+                                val relPath = name.substring(slashIdx + 1)
+                                if (relPath.isEmpty()) {
+                                    entry = tis.nextEntry
+                                    continue
+                                }
+
+                                val outFile = File(destDir, relPath)
+
+                                when {
+                                    entry.isDirectory -> {
+                                        outFile.mkdirs()
+                                    }
+                                    entry.isSymbolicLink -> {
+                                        try {
+                                            if (outFile.exists()) outFile.delete()
+                                            outFile.parentFile?.mkdirs()
+                                            Os.symlink(entry.linkName, outFile.absolutePath)
+                                        } catch (_: Exception) {}
+                                    }
+                                    else -> {
+                                        outFile.parentFile?.mkdirs()
+                                        FileOutputStream(outFile).use { fos ->
+                                            val buf = ByteArray(65536)
+                                            var len: Int
+                                            while (tis.read(buf).also { len = it } != -1) {
+                                                fos.write(buf, 0, len)
+                                            }
+                                        }
+                                        outFile.setReadable(true, false)
+                                        outFile.setWritable(true, false)
+                                        // Set executable for bin/ files and .so files
+                                        val mode = entry.mode
+                                        if (mode and 0b001_001_001 != 0 ||
+                                            relPath.startsWith("bin/") ||
+                                            relPath.contains(".so")) {
+                                            outFile.setExecutable(true, false)
+                                        }
+                                    }
+                                }
+
+                                entry = tis.nextEntry
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            throw RuntimeException(
+                "Node.js tarball extraction failed after $entryCount entries: ${e.message}"
+            )
+        }
+
+        // Verify node binary exists
+        val nodeBin = File("$rootfsDir/usr/local/bin/node")
+        if (!nodeBin.exists()) {
+            throw RuntimeException(
+                "Node.js extraction failed: node binary not found at /usr/local/bin/node " +
+                "(processed $entryCount entries)"
+            )
+        }
+        nodeBin.setExecutable(true, false)
+
+        // Clean up tarball
+        File(tarPath).delete()
+    }
+
     private fun deleteRecursively(file: File) {
         if (file.isDirectory) {
             file.listFiles()?.forEach { deleteRecursively(it) }

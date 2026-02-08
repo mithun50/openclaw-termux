@@ -108,6 +108,7 @@ class BootstrapService {
         'echo permissions_fixed',
       );
 
+      // --- Install base packages (ca-certificates needed for HTTPS) ---
       onProgress(const SetupState(
         step: SetupStep.installingNode,
         progress: 0.1,
@@ -117,109 +118,81 @@ class BootstrapService {
 
       onProgress(const SetupState(
         step: SetupStep.installingNode,
-        progress: 0.2,
+        progress: 0.15,
         message: 'Downloading base packages...',
       ));
-      // APT's internal fork→exec→dpkg fails with exit 100 on Android 10+
-      // (W^X policy + PTY setup in the forked child). Workaround: download
-      // packages via apt (no dpkg needed), then run dpkg directly from the
-      // shell where proot's ptrace interception works correctly.
       await NativeBridge.runInProot(
-        'apt-get -q -d install -y --no-install-recommends '
-        'ca-certificates curl gnupg',
+        'apt-get -q -d install -y --no-install-recommends ca-certificates',
       );
 
       onProgress(const SetupState(
         step: SetupStep.installingNode,
-        progress: 0.25,
+        progress: 0.2,
         message: 'Extracting base packages...',
       ));
-      // Extract .deb files using Java (Apache Commons Compress) to avoid
-      // fork+exec issues in proot on Android 10+. dpkg, dpkg-deb, ar all
-      // fail because subprocess forking is broken in proot.
       await NativeBridge.extractDebPackages();
 
       onProgress(const SetupState(
         step: SetupStep.installingNode,
-        progress: 0.3,
+        progress: 0.25,
         message: 'Configuring certificates...',
       ));
-      // Java extraction doesn't run postinst scripts. ca-certificates
-      // needs update-ca-certificates to generate the cert bundle.
-      // Try it first; if it fails (fork issues), manually concatenate certs.
       try {
         await NativeBridge.runInProot('update-ca-certificates 2>/dev/null');
       } catch (_) {
-        // Manual fallback: concatenate all Mozilla CA certs into the bundle
         await NativeBridge.runInProot(
-          'mkdir -p /etc/ssl/certs 2>/dev/null; '
           'cat /usr/share/ca-certificates/mozilla/*.crt '
           '> /etc/ssl/certs/ca-certificates.crt 2>/dev/null; '
           'echo certs_done',
         );
       }
 
-      onProgress(const SetupState(
-        step: SetupStep.installingNode,
-        progress: 0.4,
-        message: 'Adding NodeSource repository...',
-      ));
-      // The NodeSource setup script internally runs apt-get which fails
-      // (fork+exec issue). Add the repo manually instead.
-      // Use curl -k as fallback if certs are still broken.
-      await NativeBridge.runInProot(
-        'curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key '
-        '-o /tmp/nodesource.gpg.key 2>/dev/null || '
-        'curl -fsSLk https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key '
-        '-o /tmp/nodesource.gpg.key',
-      );
-      await NativeBridge.runInProot(
-        'gpg --dearmor -o /usr/share/keyrings/nodesource.gpg '
-        '< /tmp/nodesource.gpg.key 2>/dev/null; '
-        'echo "deb [signed-by=/usr/share/keyrings/nodesource.gpg] '
-        'https://deb.nodesource.com/node_22.x nodistro main" '
-        '> /etc/apt/sources.list.d/nodesource.list; '
-        'echo repo_added',
-      );
+      // --- Install Node.js via binary tarball ---
+      // Download directly from nodejs.org (bypasses curl/gpg/NodeSource
+      // which fail inside proot). Includes node + npm + corepack.
+      final nodeTarUrl = AppConstants.getNodeTarballUrl(arch);
+      final nodeTarPath = '$filesDir/tmp/nodejs.tar.xz';
 
       onProgress(const SetupState(
         step: SetupStep.installingNode,
-        progress: 0.5,
-        message: 'Updating package lists...',
+        progress: 0.3,
+        message: 'Downloading Node.js ${AppConstants.nodeVersion}...',
       ));
-      await NativeBridge.runInProot('apt-get update -y');
-
-      onProgress(const SetupState(
-        step: SetupStep.installingNode,
-        progress: 0.6,
-        message: 'Downloading Node.js...',
-      ));
-      await NativeBridge.runInProot(
-        'apt-get -q -d install -y --no-install-recommends nodejs',
+      await _dio.download(
+        nodeTarUrl,
+        nodeTarPath,
+        onReceiveProgress: (received, total) {
+          if (total > 0) {
+            final progress = 0.3 + (received / total) * 0.4;
+            final mb = (received / 1024 / 1024).toStringAsFixed(1);
+            final totalMb = (total / 1024 / 1024).toStringAsFixed(1);
+            onProgress(SetupState(
+              step: SetupStep.installingNode,
+              progress: progress,
+              message: 'Downloading Node.js: $mb MB / $totalMb MB',
+            ));
+          }
+        },
       );
 
       onProgress(const SetupState(
         step: SetupStep.installingNode,
         progress: 0.75,
-        message: 'Extracting Node.js packages...',
+        message: 'Extracting Node.js...',
       ));
-      await NativeBridge.extractDebPackages();
+      await NativeBridge.extractNodeTarball(nodeTarPath);
 
       onProgress(const SetupState(
         step: SetupStep.installingNode,
         progress: 0.9,
         message: 'Verifying Node.js...',
       ));
-      // proot's getcwd() syscall returns ENOSYS on Android 10+.
-      // node --version works (exits before module system init), but any
-      // require() call triggers process.cwd() which crashes.
-      // Fix: use node-wrapper.js which patches process.cwd before
-      // loading the target script. Installed by installBionicBypass().
-      // NOTE: Install mode uses env -i (no NODE_OPTIONS, npm_config_cache
-      // already set in env). node-wrapper.js patches broken syscalls.
+      // node-wrapper.js patches broken proot syscalls before loading npm.
+      // /usr/local/bin is on PATH, so node finds the tarball's npm.
       const wrapper = '/root/.openclawd/node-wrapper.js';
       const nodeRun = 'node $wrapper';
-      final npmCli = '/usr/lib/node_modules/npm/bin/npm-cli.js';
+      // npm from nodejs.org tarball is at /usr/local/lib/node_modules/npm
+      final npmCli = '/usr/local/lib/node_modules/npm/bin/npm-cli.js';
       await NativeBridge.runInProot(
         'node --version && $nodeRun $npmCli --version',
       );
@@ -236,9 +209,8 @@ class BootstrapService {
         message: 'Installing OpenClaw (this may take a few minutes)...',
       ));
       // --ignore-scripts: npm runs postinstall scripts by forking child
-      // processes, which fails in proot (level 2+ fork). Native modules
-      // (sharp, node-pty) download prebuilts in postinstall — we handle
-      // sharp manually below; node-pty is optional for gateway mode.
+      // processes, which may fail in proot. Native modules (sharp, node-pty)
+      // download prebuilts in postinstall — we rebuild manually below.
       await NativeBridge.runInProot(
         '$nodeRun $npmCli install -g openclaw --ignore-scripts --no-optional',
         timeout: 1800,
@@ -249,9 +221,9 @@ class BootstrapService {
         progress: 0.7,
         message: 'Setting up native modules...',
       ));
-      // Native modules need their prebuilt binaries for linux-arm64.
-      // postinstall scripts can't run (spawn fails in proot), so we
-      // rebuild them individually. Each is optional — gateway works without them.
+      // Native modules need their prebuilt binaries.
+      // postinstall scripts may fail (spawn in proot), so rebuild individually.
+      // Each is optional — gateway works without them.
       for (final mod in ['sharp', 'better-sqlite3']) {
         try {
           await NativeBridge.runInProot(
