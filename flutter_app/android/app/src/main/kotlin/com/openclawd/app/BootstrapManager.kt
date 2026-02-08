@@ -69,6 +69,10 @@ class BootstrapManager(
 
     fun extractRootfs(tarPath: String) {
         val rootfs = File(rootfsDir)
+        // Clean up any previous failed extraction
+        if (rootfs.exists()) {
+            deleteRecursively(rootfs)
+        }
         rootfs.mkdirs()
 
         // Pure Java extraction using Apache Commons Compress.
@@ -77,110 +81,125 @@ class BootstrapManager(
         //   Phase 2: Create all symlinks (deferred so directory structure exists first).
         // This handles tarball entry ordering issues (e.g., bin/bash before bin→usr/bin).
         val deferredSymlinks = mutableListOf<Pair<String, String>>() // target, path
+        var entryCount = 0
+        var fileCount = 0
+        var symlinkCount = 0
+        var extractionError: Exception? = null
 
-        FileInputStream(tarPath).use { fis ->
-            BufferedInputStream(fis, 256 * 1024).use { bis ->
-                GZIPInputStream(bis).use { gis ->
-                    TarArchiveInputStream(gis).use { tis ->
-                        var entry: TarArchiveEntry? = tis.nextEntry
-                        while (entry != null) {
-                            val name = entry.name
-                                .removePrefix("./")
-                                .removePrefix("/")
+        try {
+            FileInputStream(tarPath).use { fis ->
+                BufferedInputStream(fis, 256 * 1024).use { bis ->
+                    GZIPInputStream(bis).use { gis ->
+                        TarArchiveInputStream(gis).use { tis ->
+                            var entry: TarArchiveEntry? = tis.nextEntry
+                            while (entry != null) {
+                                entryCount++
+                                val name = entry.name
+                                    .removePrefix("./")
+                                    .removePrefix("/")
 
-                            if (name.isEmpty() || name.startsWith("dev/") || name == "dev") {
-                                entry = tis.nextEntry
-                                continue
-                            }
-
-                            val outFile = File(rootfsDir, name)
-
-                            when {
-                                entry.isDirectory -> {
-                                    outFile.mkdirs()
+                                if (name.isEmpty() || name.startsWith("dev/") || name == "dev") {
+                                    entry = tis.nextEntry
+                                    continue
                                 }
-                                entry.isSymbolicLink -> {
-                                    // Defer symlinks to phase 2
-                                    deferredSymlinks.add(
-                                        Pair(entry.linkName, outFile.absolutePath)
-                                    )
-                                }
-                                entry.isLink -> {
-                                    // Hard link → copy the target file
-                                    // (symlinks break inside proot due to path translation)
-                                    val target = entry.linkName
-                                        .removePrefix("./")
-                                        .removePrefix("/")
-                                    val targetFile = File(rootfsDir, target)
-                                    outFile.parentFile?.mkdirs()
-                                    try {
-                                        if (targetFile.exists()) {
-                                            targetFile.copyTo(outFile, overwrite = true)
-                                            if (targetFile.canExecute()) {
+
+                                val outFile = File(rootfsDir, name)
+
+                                when {
+                                    entry.isDirectory -> {
+                                        outFile.mkdirs()
+                                    }
+                                    entry.isSymbolicLink -> {
+                                        // Defer symlinks to phase 2
+                                        deferredSymlinks.add(
+                                            Pair(entry.linkName, outFile.absolutePath)
+                                        )
+                                        symlinkCount++
+                                    }
+                                    entry.isLink -> {
+                                        // Hard link → copy the target file
+                                        val target = entry.linkName
+                                            .removePrefix("./")
+                                            .removePrefix("/")
+                                        val targetFile = File(rootfsDir, target)
+                                        outFile.parentFile?.mkdirs()
+                                        try {
+                                            if (targetFile.exists()) {
+                                                targetFile.copyTo(outFile, overwrite = true)
+                                                if (targetFile.canExecute()) {
+                                                    outFile.setExecutable(true, false)
+                                                }
+                                                fileCount++
+                                            }
+                                        } catch (_: Exception) {}
+                                    }
+                                    else -> {
+                                        // Regular file
+                                        outFile.parentFile?.mkdirs()
+                                        FileOutputStream(outFile).use { fos ->
+                                            val buf = ByteArray(65536)
+                                            var len: Int
+                                            while (tis.read(buf).also { len = it } != -1) {
+                                                fos.write(buf, 0, len)
+                                            }
+                                        }
+                                        outFile.setReadable(true, false)
+                                        outFile.setWritable(true, false)
+                                        val mode = entry.mode
+                                        if (mode == 0 || mode and 0b001_001_001 != 0) {
+                                            val path = name.lowercase()
+                                            if (mode and 0b001_001_001 != 0 ||
+                                                path.contains("/bin/") ||
+                                                path.contains("/sbin/") ||
+                                                path.endsWith(".sh") ||
+                                                path.contains("/lib/apt/methods/")) {
                                                 outFile.setExecutable(true, false)
                                             }
                                         }
-                                    } catch (_: Exception) {}
-                                }
-                                else -> {
-                                    // Regular file
-                                    outFile.parentFile?.mkdirs()
-                                    FileOutputStream(outFile).use { fos ->
-                                        val buf = ByteArray(65536)
-                                        var len: Int
-                                        while (tis.read(buf).also { len = it } != -1) {
-                                            fos.write(buf, 0, len)
-                                        }
-                                    }
-                                    // Preserve permissions — always ensure readable,
-                                    // and set executable if any exec bit is set in tar
-                                    outFile.setReadable(true, false)
-                                    outFile.setWritable(true, false)
-                                    val mode = entry.mode
-                                    if (mode == 0 || mode and 0b001_001_001 != 0) {
-                                        // If mode is 0 (unknown), default to executable
-                                        // for files in bin/sbin directories
-                                        val path = name.lowercase()
-                                        if (mode and 0b001_001_001 != 0 ||
-                                            path.contains("/bin/") ||
-                                            path.contains("/sbin/") ||
-                                            path.endsWith(".sh") ||
-                                            path.contains("/lib/apt/methods/")) {
-                                            outFile.setExecutable(true, false)
-                                        }
+                                        fileCount++
                                     }
                                 }
-                            }
 
-                            entry = tis.nextEntry
+                                entry = tis.nextEntry
+                            }
                         }
                     }
                 }
             }
+        } catch (e: Exception) {
+            extractionError = e
+        }
+
+        if (entryCount == 0) {
+            throw RuntimeException(
+                "Extraction failed: tarball appears empty or corrupt. " +
+                "Error: ${extractionError?.message ?: "none"}"
+            )
+        }
+
+        if (extractionError != null && fileCount < 100) {
+            throw RuntimeException(
+                "Extraction failed after $entryCount entries ($fileCount files): " +
+                "${extractionError!!.message}"
+            )
         }
 
         // Phase 2: Create all symlinks now that the directory structure exists.
-        // If a directory was created where a symlink should be (due to entry ordering),
-        // we delete the directory first. This handles Ubuntu's merged /usr layout
-        // where /bin → usr/bin, /sbin → usr/sbin, /lib → usr/lib.
+        var symlinkErrors = 0
+        var lastSymlinkError = ""
         for ((target, path) in deferredSymlinks) {
             try {
                 val file = File(path)
                 if (file.exists()) {
                     if (file.isDirectory) {
-                        // Directory exists where symlink should be — move contents
-                        // to the real target directory, then replace with symlink.
-                        // This handles /bin (dir with files) → usr/bin (symlink).
                         val linkTarget = if (target.startsWith("/")) {
                             target.removePrefix("/")
                         } else {
-                            // Resolve relative target against parent dir
                             val parent = file.parentFile?.absolutePath ?: rootfsDir
                             File(parent, target).relativeTo(File(rootfsDir)).path
                         }
                         val realTargetDir = File(rootfsDir, linkTarget)
                         if (realTargetDir.exists() && realTargetDir.isDirectory) {
-                            // Move files from this dir to the real target dir
                             file.listFiles()?.forEach { child ->
                                 val dest = File(realTargetDir, child.name)
                                 if (!dest.exists()) {
@@ -195,13 +214,23 @@ class BootstrapManager(
                 }
                 file.parentFile?.mkdirs()
                 Os.symlink(target, path)
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                symlinkErrors++
+                lastSymlinkError = "$path -> $target: ${e.message}"
+            }
         }
 
         // Verify extraction
         if (!File("$rootfsDir/bin/bash").exists() &&
             !File("$rootfsDir/usr/bin/bash").exists()) {
-            throw RuntimeException("Extraction failed: bash not found in rootfs")
+            throw RuntimeException(
+                "Extraction failed: bash not found in rootfs. " +
+                "Processed $entryCount entries, $fileCount files, " +
+                "$symlinkCount symlinks (${symlinkErrors} symlink errors). " +
+                "Last symlink error: $lastSymlinkError. " +
+                "usr/bin exists: ${File("$rootfsDir/usr/bin").exists()}. " +
+                "Extraction error: ${extractionError?.message ?: "none"}"
+            )
         }
 
         // Post-extraction: configure rootfs for proot compatibility
