@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../constants.dart';
 import '../models/gateway_state.dart';
 import '../providers/gateway_provider.dart';
+import '../screens/logs_screen.dart';
 
 class GatewayControls extends StatelessWidget {
   const GatewayControls({super.key});
@@ -34,20 +37,44 @@ class GatewayControls extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                if (state.isRunning)
-                  Text(
-                    'Listening on http://127.0.0.1:18789',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+                if (state.isRunning) ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SelectableText(
+                          state.dashboardUrl ?? AppConstants.gatewayUrl,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.copy, size: 18),
+                        tooltip: 'Copy URL',
+                        onPressed: () {
+                          final url = state.dashboardUrl ?? AppConstants.gatewayUrl;
+                          Clipboard.setData(ClipboardData(text: url));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('URL copied to clipboard'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
+                ],
                 if (state.errorMessage != null)
                   Text(
                     state.errorMessage!,
                     style: TextStyle(color: theme.colorScheme.error),
                   ),
                 const SizedBox(height: 16),
-                Row(
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
                     if (state.isStopped || state.status == GatewayStatus.error)
                       FilledButton.icon(
@@ -64,6 +91,13 @@ class GatewayControls extends StatelessWidget {
                         ),
                         label: const Text('Stop Gateway'),
                       ),
+                    OutlinedButton.icon(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const LogsScreen()),
+                      ),
+                      icon: const Icon(Icons.article_outlined),
+                      label: const Text('View Logs'),
+                    ),
                   ],
                 ),
               ],

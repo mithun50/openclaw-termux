@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants.dart';
 import '../services/native_bridge.dart';
 import '../services/preferences_service.dart';
 import 'setup_wizard_screen.dart';
@@ -78,6 +79,13 @@ class _SplashScreenState extends State<SplashScreen> {
             Text(
               'AI Gateway for Android',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'by ${AppConstants.authorName}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),

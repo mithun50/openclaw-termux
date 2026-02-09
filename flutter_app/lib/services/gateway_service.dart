@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import '../constants.dart';
 import '../models/gateway_state.dart';
 import 'native_bridge.dart';
+import 'preferences_service.dart';
 
 class GatewayService {
   Timer? _healthTimer;
@@ -19,9 +20,15 @@ class GatewayService {
   }
 
   Future<void> start() async {
+    // Load saved token URL from preferences
+    final prefs = PreferencesService();
+    await prefs.init();
+    final savedUrl = prefs.dashboardUrl;
+
     _updateState(_state.copyWith(
       status: GatewayStatus.starting,
       logs: [..._state.logs, '[INFO] Starting gateway...'],
+      dashboardUrl: savedUrl,
     ));
 
     try {
@@ -33,7 +40,13 @@ class GatewayService {
         if (logs.length > 500) {
           logs.removeRange(0, logs.length - 500);
         }
-        _updateState(_state.copyWith(logs: logs));
+        // Parse log for token URL
+        String? dashboardUrl;
+        final urlMatch = RegExp(r'https?://127\.0\.0\.1:18789[^\s]*').firstMatch(log);
+        if (urlMatch != null) {
+          dashboardUrl = urlMatch.group(0);
+        }
+        _updateState(_state.copyWith(logs: logs, dashboardUrl: dashboardUrl));
       });
 
       _startHealthCheck();

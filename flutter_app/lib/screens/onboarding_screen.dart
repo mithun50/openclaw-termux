@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:xterm/xterm.dart';
 import 'package:flutter_pty/flutter_pty.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../constants.dart';
 import '../services/native_bridge.dart';
 import '../services/terminal_service.dart';
 import '../services/preferences_service.dart';
@@ -31,6 +32,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   bool _loading = true;
   bool _finished = false;
   String? _error;
+  final _tokenUrlRegex = RegExp(r'https?://127\.0\.0\.1:18789[^\s\x1b]*');
+  String _outputBuffer = '';
 
   static const _fontFallback = [
     'Noto Color Emoji',
@@ -81,7 +84,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       );
 
       _pty!.output.cast<List<int>>().listen((data) {
-        _terminal.write(utf8.decode(data, allowMalformed: true));
+        final text = utf8.decode(data, allowMalformed: true);
+        _terminal.write(text);
+        // Scan output for token URL (e.g. http://127.0.0.1:18789/v1?token=...)
+        _outputBuffer += text;
+        // Keep buffer manageable
+        if (_outputBuffer.length > 4096) {
+          _outputBuffer = _outputBuffer.substring(_outputBuffer.length - 2048);
+        }
+        final match = _tokenUrlRegex.firstMatch(_outputBuffer);
+        if (match != null) {
+          _saveTokenUrl(match.group(0)!);
+        }
       });
 
       _pty!.exitCode.then((code) {
@@ -106,6 +120,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         _error = 'Failed to start onboarding: $e';
       });
     }
+  }
+
+  Future<void> _saveTokenUrl(String url) async {
+    final prefs = PreferencesService();
+    await prefs.init();
+    prefs.dashboardUrl = url;
   }
 
   @override

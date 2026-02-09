@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../constants.dart';
 import '../services/native_bridge.dart';
 import '../services/preferences_service.dart';
@@ -141,6 +142,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   leading: Icon(Icons.info_outline),
                   isThreeLine: true,
+                ),
+                const ListTile(
+                  title: Text('Developer'),
+                  subtitle: Text(AppConstants.authorName),
+                  leading: Icon(Icons.person),
+                ),
+                ListTile(
+                  title: const Text('GitHub'),
+                  subtitle: const Text('mithun50/openclawd-termux'),
+                  leading: const Icon(Icons.code),
+                  trailing: const Icon(Icons.open_in_new, size: 18),
+                  onTap: () => launchUrl(
+                    Uri.parse(AppConstants.githubUrl),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                ),
+                ListTile(
+                  title: const Text('Contact'),
+                  subtitle: const Text(AppConstants.authorEmail),
+                  leading: const Icon(Icons.email),
+                  trailing: const Icon(Icons.open_in_new, size: 18),
+                  onTap: () => launchUrl(
+                    Uri.parse('mailto:${AppConstants.authorEmail}'),
+                  ),
+                ),
+                const ListTile(
+                  title: Text('License'),
+                  subtitle: Text(AppConstants.license),
+                  leading: Icon(Icons.description),
                 ),
               ],
             ),

@@ -66,7 +66,9 @@ class DashboardScreen extends StatelessWidget {
                   onTap: provider.state.isRunning
                       ? () => Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) => const WebDashboardScreen(),
+                              builder: (_) => WebDashboardScreen(
+                                url: provider.state.dashboardUrl,
+                              ),
                             ),
                           )
                       : null,
@@ -95,11 +97,22 @@ class DashboardScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Center(
-              child: Text(
-                'OpenClawd v${AppConstants.version}',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+              child: Column(
+                children: [
+                  Text(
+                    'OpenClawd v${AppConstants.version}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'by ${AppConstants.authorName}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

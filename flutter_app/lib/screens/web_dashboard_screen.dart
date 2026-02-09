@@ -3,7 +3,9 @@ import 'package:webview_flutter/webview_flutter.dart';
 import '../constants.dart';
 
 class WebDashboardScreen extends StatefulWidget {
-  const WebDashboardScreen({super.key});
+  final String? url;
+
+  const WebDashboardScreen({super.key, this.url});
 
   @override
   State<WebDashboardScreen> createState() => _WebDashboardScreenState();
@@ -37,7 +39,7 @@ class _WebDashboardScreenState extends State<WebDashboardScreen> {
           },
         ),
       )
-      ..loadRequest(Uri.parse(AppConstants.gatewayUrl));
+      ..loadRequest(Uri.parse(widget.url ?? AppConstants.gatewayUrl));
   }
 
   @override

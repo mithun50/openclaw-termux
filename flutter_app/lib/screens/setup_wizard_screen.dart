@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../constants.dart';
 import '../models/setup_state.dart';
 import '../providers/setup_provider.dart';
 import '../widgets/progress_step.dart';
@@ -118,6 +119,15 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                       ),
                     ),
                   ],
+                  const SizedBox(height: 16),
+                  Center(
+                    child: Text(
+                      'by ${AppConstants.authorName}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             );

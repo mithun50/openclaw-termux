@@ -10,12 +10,14 @@ class GatewayState {
   final List<String> logs;
   final String? errorMessage;
   final DateTime? startedAt;
+  final String? dashboardUrl;
 
   const GatewayState({
     this.status = GatewayStatus.stopped,
     this.logs = const [],
     this.errorMessage,
     this.startedAt,
+    this.dashboardUrl,
   });
 
   GatewayState copyWith({
@@ -23,12 +25,14 @@ class GatewayState {
     List<String>? logs,
     String? errorMessage,
     DateTime? startedAt,
+    String? dashboardUrl,
   }) {
     return GatewayState(
       status: status ?? this.status,
       logs: logs ?? this.logs,
       errorMessage: errorMessage,
       startedAt: startedAt ?? this.startedAt,
+      dashboardUrl: dashboardUrl ?? this.dashboardUrl,
     );
   }
 
