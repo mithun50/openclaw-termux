@@ -108,11 +108,10 @@ class BootstrapService {
         'echo permissions_fixed',
       );
 
-      // --- Install base packages ---
-      // ca-certificates: needed for HTTPS (npm, git)
-      // git: openclaw has git dependencies (@whiskeysockets/libsignal-node)
-      //      that npm must clone. git needs fork/exec which should work
-      //      now with our clean proot setup matching Termux.
+      // --- Install base packages via apt-get (like Termux proot-distro) ---
+      // Now that our proot matches Termux exactly (env -i, clean host env,
+      // proper flags), dpkg works normally. No need for Java-side deb
+      // extraction — let dpkg+tar handle it inside proot like Termux does.
       onProgress(const SetupState(
         step: SetupStep.installingNode,
         progress: 0.1,
@@ -123,47 +122,20 @@ class BootstrapService {
       onProgress(const SetupState(
         step: SetupStep.installingNode,
         progress: 0.15,
-        message: 'Downloading base packages...',
+        message: 'Installing base packages...',
       ));
+      // ca-certificates: HTTPS for npm/git
+      // git: openclaw has git deps (@whiskeysockets/libsignal-node)
+      // dpkg extracts via tar inside proot — permissions are correct.
+      // Post-install scripts (update-ca-certificates) run automatically.
       await NativeBridge.runInProot(
-        'apt-get -q -d install -y --no-install-recommends '
+        'apt-get install -y --no-install-recommends '
         'ca-certificates git',
       );
 
-      onProgress(const SetupState(
-        step: SetupStep.installingNode,
-        progress: 0.2,
-        message: 'Extracting base packages...',
-      ));
-      await NativeBridge.extractDebPackages();
-
-      // Fix permissions on newly extracted deb binaries (git-core, etc.)
-      // Java-side fixBinPermissions covers this too, but belt-and-suspenders
-      // inside proot ensures proot's view of permissions is correct.
-      await NativeBridge.runInProot(
-        'chmod -R 755 /usr/lib/git-core/ 2>/dev/null; '
-        'chmod -R 755 /usr/bin /usr/sbin 2>/dev/null; '
-        'echo deb_perms_fixed',
-      );
-
-      onProgress(const SetupState(
-        step: SetupStep.installingNode,
-        progress: 0.22,
-        message: 'Configuring certificates...',
-      ));
-      try {
-        await NativeBridge.runInProot('update-ca-certificates 2>/dev/null');
-      } catch (_) {
-        await NativeBridge.runInProot(
-          'cat /usr/share/ca-certificates/mozilla/*.crt '
-          '> /etc/ssl/certs/ca-certificates.crt 2>/dev/null; '
-          'echo certs_done',
-        );
-      }
-
       // Git config (.gitconfig) is written by installBionicBypass() on the
-      // Java side — directly to $rootfsDir/root/.gitconfig — to avoid shell
-      // quoting issues with bash -c. It rewrites SSH→HTTPS for npm git deps.
+      // Java side — directly to $rootfsDir/root/.gitconfig — rewrites
+      // SSH→HTTPS for npm git deps (no SSH keys in proot).
 
       // --- Install Node.js via binary tarball ---
       // Download directly from nodejs.org (bypasses curl/gpg/NodeSource
@@ -226,33 +198,12 @@ class BootstrapService {
         progress: 0.0,
         message: 'Installing OpenClaw (this may take a few minutes)...',
       ));
-      // --ignore-scripts: npm runs postinstall scripts by forking child
-      // processes, which may fail in proot. Native modules (sharp, node-pty)
-      // download prebuilts in postinstall — we rebuild manually below.
+      // Install openclaw like Termux — fork/exec works now, so let npm
+      // run postinstall scripts normally. No --ignore-scripts needed.
       await NativeBridge.runInProot(
-        '$nodeRun $npmCli install -g openclaw --ignore-scripts --no-optional',
+        '$nodeRun $npmCli install -g openclaw',
         timeout: 1800,
       );
-
-      onProgress(const SetupState(
-        step: SetupStep.installingOpenClaw,
-        progress: 0.7,
-        message: 'Setting up native modules...',
-      ));
-      // Native modules need their prebuilt binaries.
-      // postinstall scripts may fail (spawn in proot), so rebuild individually.
-      // Each is optional — gateway works without them.
-      for (final mod in ['sharp', 'better-sqlite3']) {
-        try {
-          await NativeBridge.runInProot(
-            '$nodeRun $npmCli rebuild $mod --ignore-scripts 2>/dev/null; '
-            'echo ${mod}_done',
-            timeout: 300,
-          );
-        } catch (_) {
-          // Native modules are optional for core gateway
-        }
-      }
 
       onProgress(const SetupState(
         step: SetupStep.installingOpenClaw,
