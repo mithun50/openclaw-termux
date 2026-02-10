@@ -73,6 +73,7 @@ jobs:
           keyAlias=$KEY_ALIAS
           storeFile=${{ github.workspace }}/release.jks
           EOF
+          sed -i 's/^[[:space:]]*//' flutter_app/android/key.properties
 
       - name: Fetch PRoot binaries
         run: bash scripts/fetch-proot-binaries.sh
