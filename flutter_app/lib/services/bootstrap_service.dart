@@ -214,7 +214,7 @@ class BootstrapService {
       const wrapper = '/root/.openclawd/node-wrapper.js';
       const nodeRun = 'node $wrapper';
       // npm from nodejs.org tarball is at /usr/local/lib/node_modules/npm
-      final npmCli = '/usr/local/lib/node_modules/npm/bin/npm-cli.js';
+      const npmCli = '/usr/local/lib/node_modules/npm/bin/npm-cli.js';
       await NativeBridge.runInProot(
         'node --version && $nodeRun $npmCli --version',
       );

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:xterm/xterm.dart';
 import 'package:flutter_pty/flutter_pty.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../services/native_bridge.dart';
 import '../services/terminal_service.dart';
 import '../widgets/terminal_toolbar.dart';
 
@@ -348,7 +349,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
           child: TerminalView(
             _terminal,
             controller: _controller,
-            textStyle: TerminalStyle(
+            textStyle: const TerminalStyle(
               fontSize: 14,
               fontFamily: 'monospace',
               fontFamilyFallback: _fontFallback,

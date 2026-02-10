@@ -423,7 +423,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: TerminalView(
                 _terminal,
                 controller: _controller,
-                textStyle: TerminalStyle(
+                textStyle: const TerminalStyle(
                   fontSize: 14,
                   fontFamily: 'monospace',
                   fontFamilyFallback: _fontFallback,
