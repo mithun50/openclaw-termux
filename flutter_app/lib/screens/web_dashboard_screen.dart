@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../constants.dart';
+import '../services/preferences_service.dart';
 
 class WebDashboardScreen extends StatefulWidget {
   final String? url;
@@ -38,8 +39,19 @@ class _WebDashboardScreenState extends State<WebDashboardScreen> {
             }
           },
         ),
-      )
-      ..loadRequest(Uri.parse(widget.url ?? AppConstants.gatewayUrl));
+      );
+    _loadUrl();
+  }
+
+  Future<void> _loadUrl() async {
+    var url = widget.url;
+    if (url == null || url.isEmpty) {
+      // Fallback: load saved token URL from preferences
+      final prefs = PreferencesService();
+      await prefs.init();
+      url = prefs.dashboardUrl;
+    }
+    _controller.loadRequest(Uri.parse(url ?? AppConstants.gatewayUrl));
   }
 
   @override
