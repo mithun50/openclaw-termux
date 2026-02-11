@@ -33,6 +33,7 @@ class _PackageInstallScreenState extends State<PackageInstallScreen> {
   String? _error;
 
   static const _fontFallback = [
+    'monospace',
     'Noto Sans Mono',
     'Noto Sans Mono CJK SC',
     'Noto Sans Mono CJK TC',
@@ -40,7 +41,6 @@ class _PackageInstallScreenState extends State<PackageInstallScreen> {
     'Noto Color Emoji',
     'Noto Sans Symbols',
     'Noto Sans Symbols 2',
-    'monospace',
     'sans-serif',
   ];
 
@@ -206,7 +206,7 @@ class _PackageInstallScreenState extends State<PackageInstallScreen> {
                 textStyle: const TerminalStyle(
                   fontSize: 14,
                   height: 1.0,
-                  fontFamily: 'monospace',
+                  fontFamily: 'DejaVuSansMono',
                   fontFamilyFallback: _fontFallback,
                 ),
               ),

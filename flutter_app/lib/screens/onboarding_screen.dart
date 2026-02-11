@@ -44,6 +44,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   String _outputBuffer = '';
 
   static const _fontFallback = [
+    'monospace',
     'Noto Sans Mono',
     'Noto Sans Mono CJK SC',
     'Noto Sans Mono CJK TC',
@@ -51,7 +52,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     'Noto Color Emoji',
     'Noto Sans Symbols',
     'Noto Sans Symbols 2',
-    'monospace',
     'sans-serif',
   ];
 
@@ -438,7 +438,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 textStyle: const TerminalStyle(
                   fontSize: 14,
                   height: 1.0,
-                  fontFamily: 'monospace',
+                  fontFamily: 'DejaVuSansMono',
                   fontFamilyFallback: _fontFallback,
                 ),
                 onTapUp: _handleTap,

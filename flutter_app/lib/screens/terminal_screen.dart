@@ -26,6 +26,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
   static final _boxDrawing = RegExp(r'[│┤├┬┴┼╮╯╰╭─╌╴╶┌┐└┘◇◆]+');
 
   static const _fontFallback = [
+    'monospace',
     'Noto Sans Mono',
     'Noto Sans Mono CJK SC',
     'Noto Sans Mono CJK TC',
@@ -33,7 +34,6 @@ class _TerminalScreenState extends State<TerminalScreen> {
     'Noto Color Emoji',
     'Noto Sans Symbols',
     'Noto Sans Symbols 2',
-    'monospace',
     'sans-serif',
   ];
 
@@ -364,7 +364,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
             textStyle: const TerminalStyle(
               fontSize: 14,
               height: 1.0,
-              fontFamily: 'monospace',
+              fontFamily: 'DejaVuSansMono',
               fontFamilyFallback: _fontFallback,
             ),
             onTapUp: _handleTap,

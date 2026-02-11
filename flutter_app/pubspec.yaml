@@ -31,3 +31,9 @@ flutter:
     - assets/bionic_bypass.js
     - assets/resolv.conf
     - assets/ic_launcher.png
+  fonts:
+    - family: DejaVuSansMono
+      fonts:
+        - asset: assets/fonts/DejaVuSansMono.ttf
+        - asset: assets/fonts/DejaVuSansMono-Bold.ttf
+          weight: 700
