@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import '../constants.dart';
 import '../models/node_frame.dart';
 import '../models/node_state.dart';
@@ -16,6 +17,7 @@ class NodeService {
   NodeState _state = const NodeState();
   final Map<String, Future<NodeFrame> Function(String, Map<String, dynamic>)>
       _capabilityHandlers = {};
+  String? _gatewayAuthToken;
 
   Stream<NodeState> get stateStream => _stateController.stream;
   NodeState get state => _state;
@@ -120,11 +122,38 @@ class NodeService {
     }
   }
 
+  /// Read the gateway auth token from the local openclaw config.
+  Future<String?> _readGatewayToken() async {
+    try {
+      final raw = await NativeBridge.runInProot(
+        'cat /root/.openclaw/openclaw.json',
+        timeout: 5,
+      );
+      final config = jsonDecode(raw) as Map<String, dynamic>;
+      final gateway = config['gateway'] as Map<String, dynamic>?;
+      final auth = gateway?['auth'] as Map<String, dynamic>?;
+      return auth?['token'] as String?;
+    } catch (e) {
+      _log('[NODE] Could not read gateway token: $e');
+      return null;
+    }
+  }
+
   /// Build and send the `connect` request per Gateway Protocol v3.
   Future<void> _sendConnect(String nonce) async {
     final prefs = PreferencesService();
     await prefs.init();
-    final token = prefs.nodeDeviceToken;
+    final deviceToken = prefs.nodeDeviceToken;
+
+    // For local connections, read the gateway auth token from config
+    final isLocal = _state.gatewayHost == '127.0.0.1' ||
+        _state.gatewayHost == 'localhost';
+    if (isLocal && _gatewayAuthToken == null) {
+      _gatewayAuthToken = await _readGatewayToken();
+    }
+
+    // Use device token if available, otherwise gateway auth token
+    final authToken = deviceToken ?? _gatewayAuthToken;
 
     const clientId = 'node-host';
     const clientMode = 'node';
@@ -140,7 +169,7 @@ class NodeService {
       role: role,
       scopes: scopes,
       signedAtMs: signedAtMs,
-      token: token,
+      token: authToken,
       nonce: nonce,
     );
     final signature = await _identity.signPayload(authPayload);
@@ -156,7 +185,7 @@ class NodeService {
       },
       'role': role,
       'scopes': scopes,
-      if (token != null) 'auth': {'token': token},
+      if (authToken != null) 'auth': {'token': authToken},
       'device': {
         'id': _identity.deviceId,
         'publicKey': _identity.publicKeyBase64Url,
