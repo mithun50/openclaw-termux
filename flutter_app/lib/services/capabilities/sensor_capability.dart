@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../models/node_frame.dart';
 import 'capability_handler.dart';
 
@@ -13,10 +14,18 @@ class SensorCapability extends CapabilityHandler {
   List<String> get commands => ['read', 'list'];
 
   @override
-  Future<bool> checkPermission() async => true;
+  List<Permission> get requiredPermissions => [Permission.sensors];
 
   @override
-  Future<bool> requestPermission() async => true;
+  Future<bool> checkPermission() async {
+    return await Permission.sensors.isGranted;
+  }
+
+  @override
+  Future<bool> requestPermission() async {
+    final status = await Permission.sensors.request();
+    return status.isGranted;
+  }
 
   @override
   Future<NodeFrame> handle(String command, Map<String, dynamic> params) async {

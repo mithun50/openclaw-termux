@@ -1,4 +1,5 @@
 import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../models/node_frame.dart';
 import 'capability_handler.dart';
 
@@ -10,6 +11,9 @@ class LocationCapability extends CapabilityHandler {
   List<String> get commands => ['get'];
 
   @override
+  List<Permission> get requiredPermissions => [Permission.location];
+
+  @override
   Future<bool> checkPermission() async {
     final permission = await Geolocator.checkPermission();
     return permission == LocationPermission.whileInUse ||
@@ -19,6 +23,9 @@ class LocationCapability extends CapabilityHandler {
   @override
   Future<bool> requestPermission() async {
     final permission = await Geolocator.requestPermission();
+    if (permission == LocationPermission.deniedForever) {
+      return false;
+    }
     return permission == LocationPermission.whileInUse ||
         permission == LocationPermission.always;
   }

@@ -53,7 +53,7 @@ class NodeProvider extends ChangeNotifier {
     _nodeService.registerCapability(
       _flashCapability.name,
       _flashCapability.commands.map((c) => '${_flashCapability.name}.$c').toList(),
-      (cmd, params) => _flashCapability.handle(cmd, params),
+      (cmd, params) => _flashCapability.handleWithPermission(cmd, params),
     );
     _nodeService.registerCapability(
       _locationCapability.name,
@@ -68,7 +68,7 @@ class NodeProvider extends ChangeNotifier {
     _nodeService.registerCapability(
       _sensorCapability.name,
       _sensorCapability.commands.map((c) => '${_sensorCapability.name}.$c').toList(),
-      (cmd, params) => _sensorCapability.handle(cmd, params),
+      (cmd, params) => _sensorCapability.handleWithPermission(cmd, params),
     );
     _nodeService.registerCapability(
       _vibrationCapability.name,

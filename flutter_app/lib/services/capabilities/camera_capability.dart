@@ -16,6 +16,9 @@ class CameraCapability extends CapabilityHandler {
   List<String> get commands => ['snap', 'clip'];
 
   @override
+  List<Permission> get requiredPermissions => [Permission.camera];
+
+  @override
   Future<bool> checkPermission() async {
     return await Permission.camera.isGranted;
   }

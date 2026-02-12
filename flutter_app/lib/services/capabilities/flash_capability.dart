@@ -1,4 +1,5 @@
 import 'package:camera/camera.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../models/node_frame.dart';
 import 'capability_handler.dart';
 
@@ -14,10 +15,18 @@ class FlashCapability extends CapabilityHandler {
   List<String> get commands => ['on', 'off', 'toggle', 'status'];
 
   @override
-  Future<bool> checkPermission() async => true;
+  List<Permission> get requiredPermissions => [Permission.camera];
 
   @override
-  Future<bool> requestPermission() async => true;
+  Future<bool> checkPermission() async {
+    return await Permission.camera.isGranted;
+  }
+
+  @override
+  Future<bool> requestPermission() async {
+    final status = await Permission.camera.request();
+    return status.isGranted;
+  }
 
   Future<CameraController> _getController() async {
     if (_controller != null && _controller!.value.isInitialized) {
