@@ -153,7 +153,7 @@ class ProcessManager(
             "\\$FAKE_KERNEL_VERSION\\$machine\\localdomain\\-1\\"
         flags.add(3, "--kernel-release=$kernelRelease")
 
-        val nodeOptions = "--require /root/.openclawd/bionic-bypass.js"
+        val nodeOptions = "--require /root/.openclaw/bionic-bypass.js"
 
         // Guest environment via env -i (matching proot-distro command_login)
         flags.addAll(listOf(

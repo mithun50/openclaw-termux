@@ -45,7 +45,8 @@ class TerminalService {
   /// Build proot arguments matching ProcessManager.kt's gateway mode
   /// (proot-distro command_login). Uses `env -i` for a clean guest
   /// environment — prevents Android JVM vars from leaking into proot.
-  static List<String> buildProotArgs(Map<String, String> config) {
+  static List<String> buildProotArgs(Map<String, String> config,
+      {int columns = 80, int rows = 24}) {
     final procFakes = '${config['configDir']}/proc_fakes';
     final sysFakes = '${config['configDir']}/sys_fakes';
     final rootfsDir = config['rootfsDir']!;
@@ -106,7 +107,9 @@ class TerminalService {
       'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
       'TERM=xterm-256color',
       'TMPDIR=/tmp',
-      'NODE_OPTIONS=--require /root/.openclawd/bionic-bypass.js',
+      'COLUMNS=$columns',
+      'LINES=$rows',
+      'NODE_OPTIONS=--require /root/.openclaw/bionic-bypass.js',
       '/bin/bash',
       '-l',
     ];

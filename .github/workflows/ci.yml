@@ -62,7 +62,7 @@ jobs:
         run: npm ci
 
       - name: Validate CLI entry point
-        run: node --check bin/openclawdx
+        run: node --check bin/openclawx
 
       - name: Validate module imports
         run: |

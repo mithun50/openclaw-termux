@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="512" height="512">
+  <rect width="108" height="108" rx="24" fill="#0F1B2D"/>
+
+  <!-- === OpenClaw x Android: Red Android robot with lobster claws === -->
+
+  <!-- Left antenna (lobster-style: longer, curved outward) -->
+  <path d="M44,29 C41,24 37,20 34,19" stroke="#E53935" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+
+  <!-- Right antenna -->
+  <path d="M64,29 C67,24 71,20 74,19" stroke="#E53935" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+
+  <!-- Head (Android semicircle) -->
+  <path d="M37,44 C37,29 71,29 71,44 Z" fill="#E53935"/>
+
+  <!-- Eyes -->
+  <circle cx="47" cy="37" r="2.2" fill="#0F1B2D"/>
+  <circle cx="61" cy="37" r="2.2" fill="#0F1B2D"/>
+
+  <!-- Body -->
+  <rect x="37" y="47" width="34" height="22" rx="4" fill="#E53935"/>
+
+  <!-- Left Lobster Claw -->
+  <!-- Upper prong -->
+  <path d="M37,52 L29,49 C25,47 21,48 21,52" stroke="#E53935" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <!-- Lower prong -->
+  <path d="M37,57 L29,60 C25,62 21,61 21,57" stroke="#E53935" stroke-width="5" stroke-linecap="round" fill="none"/>
+
+  <!-- Right Lobster Claw -->
+  <!-- Upper prong -->
+  <path d="M71,52 L79,49 C83,47 87,48 87,52" stroke="#E53935" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <!-- Lower prong -->
+  <path d="M71,57 L79,60 C83,62 87,61 87,57" stroke="#E53935" stroke-width="5" stroke-linecap="round" fill="none"/>
+
+  <!-- Legs -->
+  <rect x="43" y="69" width="7" height="10" rx="3.5" fill="#E53935"/>
+  <rect x="58" y="69" width="7" height="10" rx="3.5" fill="#E53935"/>
+</svg>

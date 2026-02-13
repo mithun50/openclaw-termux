@@ -1,4 +1,4 @@
-name: Build Flutter APK & AAB
+name: Build OpenClaw Apps
 
 on:
   push:
@@ -160,9 +160,102 @@ jobs:
           path: artifacts/*.aab
           retention-days: 30
 
+  build-node:
+    name: Build OpenClaw Node APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Clone OpenClaw upstream
+        run: |
+          git clone --depth 1 https://github.com/openclaw/openclaw.git /tmp/openclaw
+
+      - name: Copy Android app source
+        run: |
+          cp -r /tmp/openclaw/apps/android openclaw-node-android
+
+      - name: Copy shared assets
+        run: |
+          # The app's build.gradle.kts references ../../shared/OpenClawKit/Sources/OpenClawKit/Resources
+          mkdir -p openclaw-node-android/shared/OpenClawKit/Sources/OpenClawKit/Resources
+          if [ -d /tmp/openclaw/shared/OpenClawKit/Sources/OpenClawKit/Resources ]; then
+            cp -r /tmp/openclaw/shared/OpenClawKit/Sources/OpenClawKit/Resources/* \
+              openclaw-node-android/shared/OpenClawKit/Sources/OpenClawKit/Resources/ 2>/dev/null || true
+          fi
+
+      - name: Fix assets path for standalone build
+        working-directory: openclaw-node-android
+        run: |
+          # Rewrite assets.srcDir to point to the local shared dir instead of ../../shared
+          sed -i 's|../../shared|shared|g' app/build.gradle.kts
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Cache Gradle (Node)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-node-${{ runner.os }}-${{ hashFiles('openclaw-node-android/**/*.gradle*') }}
+          restore-keys: gradle-node-${{ runner.os }}-
+
+      - name: Make gradlew executable
+        working-directory: openclaw-node-android
+        run: chmod +x gradlew
+
+      - name: Build debug APK
+        working-directory: openclaw-node-android
+        run: ./gradlew :app:assembleDebug
+
+      - name: Build release APK
+        working-directory: openclaw-node-android
+        run: ./gradlew :app:assembleRelease
+
+      - name: Collect Node artifacts
+        id: node_artifacts
+        run: |
+          mkdir -p node-artifacts
+
+          # Get version from build.gradle.kts
+          VERSION=$(grep 'versionName' openclaw-node-android/app/build.gradle.kts | head -1 | grep -oP '"[^"]+"' | tr -d '"')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          # Debug APK
+          DEBUG_APK=$(find openclaw-node-android/app/build/outputs/apk/debug -name "*.apk" | head -1)
+          if [ -n "$DEBUG_APK" ]; then
+            cp "$DEBUG_APK" "node-artifacts/OpenClawNode-v${VERSION}-debug.apk"
+          fi
+
+          # Release APK
+          RELEASE_APK=$(find openclaw-node-android/app/build/outputs/apk/release -name "*.apk" | head -1)
+          if [ -n "$RELEASE_APK" ]; then
+            cp "$RELEASE_APK" "node-artifacts/OpenClawNode-v${VERSION}-release.apk"
+          fi
+
+          echo "Built Node artifacts:"
+          ls -lh node-artifacts/
+
+      - name: Upload Node artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: openclaw-node-apks
+          path: node-artifacts/*.apk
+          retention-days: 30
+
   release:
     name: Create GitHub Release
-    needs: build
+    needs: [build, build-node]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
@@ -183,6 +276,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: openclaw-aab
+          path: artifacts
+
+      - name: Download Node APK artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: openclaw-node-apks
           path: artifacts
 
       - name: Get version
@@ -209,7 +308,7 @@ jobs:
 
             Standalone Android app — no Termux required.
 
-            ### Downloads
+            ### Downloads — OpenClaw Gateway
             | File | Description |
             |------|-------------|
             | `OpenClaw-v${{ steps.version.outputs.version }}-arm64-v8a.apk` | Most modern Android phones (recommended) |
@@ -218,6 +317,12 @@ jobs:
             | `OpenClaw-v${{ steps.version.outputs.version }}-universal.apk` | All architectures (larger) |
             | `OpenClaw-v${{ steps.version.outputs.version }}.aab` | Android App Bundle (Play Store) |
 
+            ### Downloads — OpenClaw Node
+            | File | Description |
+            |------|-------------|
+            | `OpenClawNode-*-release.apk` | OpenClaw Node companion app (release) |
+            | `OpenClawNode-*-debug.apk` | OpenClaw Node companion app (debug) |
+
             ### First Run
             1. Install the APK
             2. Follow the setup wizard (downloads ~500MB Ubuntu rootfs)
@@ -225,7 +330,7 @@ jobs:
             4. Access the web dashboard at `http://127.0.0.1:18789`
 
             ### Requirements
-            - Android 7.0+ (API 24)
+            - Android 10+ (API 29)
             - ~500MB free storage for initial setup
             - Internet connection for first-time setup
           files: artifacts/*

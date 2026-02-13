@@ -27,10 +27,14 @@ class _TerminalScreenState extends State<TerminalScreen> {
   static final _boxDrawing = RegExp(r'[│┤├┬┴┼╮╯╰╭─╌╴╶┌┐└┘◇◆]+');
 
   static const _fontFallback = [
+    'monospace',
+    'Noto Sans Mono',
+    'Noto Sans Mono CJK SC',
+    'Noto Sans Mono CJK TC',
+    'Noto Sans Mono CJK JP',
     'Noto Color Emoji',
     'Noto Sans Symbols',
     'Noto Sans Symbols 2',
-    'Noto Sans Mono',
     'sans-serif',
   ];
 
@@ -40,13 +44,22 @@ class _TerminalScreenState extends State<TerminalScreen> {
     _terminal = Terminal(maxLines: 10000);
     _controller = TerminalController();
     NativeBridge.startTerminalService();
-    _startPty();
+    // Defer PTY start until after the first frame so TerminalView has been
+    // laid out and _terminal.viewWidth/viewHeight reflect real screen
+    // dimensions instead of the 80×24 default.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startPty();
+    });
   }
 
   Future<void> _startPty() async {
     try {
       final config = await TerminalService.getProotShellConfig();
-      final args = TerminalService.buildProotArgs(config);
+      final args = TerminalService.buildProotArgs(
+        config,
+        columns: _terminal.viewWidth,
+        rows: _terminal.viewHeight,
+      );
 
       _pty = Pty.start(
         config['executable']!,
@@ -366,8 +379,9 @@ class _TerminalScreenState extends State<TerminalScreen> {
             _terminal,
             controller: _controller,
             textStyle: const TerminalStyle(
-              fontSize: 14,
-              fontFamily: 'monospace',
+              fontSize: 11,
+              height: 1.0,
+              fontFamily: 'DejaVuSansMono',
               fontFamilyFallback: _fontFallback,
             ),
             onTapUp: _handleTap,

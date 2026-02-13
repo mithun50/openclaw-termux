@@ -1,35 +1,36 @@
 # OpenClaw
 
-[![Download APK](https://img.shields.io/badge/Download-APK-green?style=for-the-badge&logo=android)](https://github.com/mithun50/openclawd-termux/releases/download/v1.0.0/OpenClaw-v1.0.0-universal.apk)
-[![Build Flutter APK & AAB](https://github.com/mithun50/openclawd-termux/actions/workflows/flutter-build.yml/badge.svg)](https://github.com/mithun50/openclawd-termux/actions/workflows/flutter-build.yml)
-[![npm version](https://img.shields.io/npm/v/openclawd-termux?color=blue&label=npm)](https://www.npmjs.com/package/openclawd-termux)
+[![Download APK](https://img.shields.io/badge/Download-APK-green?style=for-the-badge&logo=android)](https://github.com/mithun50/openclaw-termux/releases/download/v1.6.1/OpenClaw-v1.6.1-universal.apk)
+[![Build Flutter APK & AAB](https://github.com/mithun50/openclaw-termux/actions/workflows/flutter-build.yml/badge.svg)](https://github.com/mithun50/openclaw-termux/actions/workflows/flutter-build.yml)
+[![npm version](https://img.shields.io/npm/v/openclaw-termux?color=blue&label=npm)](https://www.npmjs.com/package/openclaw-termux)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-22-green?logo=node.js)](https://nodejs.org/)
 [![Android](https://img.shields.io/badge/Android-10%2B-brightgreen?logo=android)](https://www.android.com/)
 [![Flutter](https://img.shields.io/badge/Flutter-3.24-02569B?logo=flutter)](https://flutter.dev/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/mithun50/openclawd-termux/pulls)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/mithun50/openclaw-termux/pulls)
 
 <p align="center">
   <img src="assets/mockup.png" alt="OpenClaw App Mockup" width="700"/>
 </p>
 
-> Run **OpenClaw AI Gateway** on Android — standalone Flutter app with built-in terminal, web dashboard, and one-tap setup. Also available as a Termux CLI package.
+> Run **OpenClaw AI Gateway** on Android — standalone Flutter app with built-in terminal, web dashboard, optional dev tools, and one-tap setup. Also available as a Termux CLI package.
 
 ---
 
 ## Screenshots
 
-<p align="center">
-  <img src="assets/dashboard.png" alt="Dashboard" width="220"/>
-  <img src="assets/setupscreen.png" alt="Setup" width="220"/>
-  <img src="assets/onboardingscreen.png" alt="Onboarding" width="220"/>
-</p>
-
-<p align="center">
-  <img src="assets/websscreen.png" alt="Web Dashboard" width="220"/>
-  <img src="assets/logscreen.png" alt="Logs" width="220"/>
-  <img src="assets/settingsscreen.png" alt="Settings" width="220"/>
-</p>
+<table align="center">
+  <tr>
+    <td align="center"><img src="assets/dashboard.png" alt="Dashboard" width="220"/><br/><b>Dashboard</b></td>
+    <td align="center"><img src="assets/setupscreen.png" alt="Setup" width="220"/><br/><b>Setup Wizard</b></td>
+    <td align="center"><img src="assets/onboardingscreen.png" alt="Onboarding" width="220"/><br/><b>Onboarding</b></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="assets/websscreen.png" alt="Web Dashboard" width="220"/><br/><b>Web Dashboard</b></td>
+    <td align="center"><img src="assets/logscreen.png" alt="Logs" width="220"/><br/><b>Logs</b></td>
+    <td align="center"><img src="assets/settingsscreen.png" alt="Settings" width="220"/><br/><b>Settings</b></td>
+  </tr>
+</table>
 
 ---
 
@@ -41,9 +42,9 @@ OpenClaw brings the [OpenClaw](https://github.com/anthropics/openclaw) AI gatewa
 
 | | **Flutter App** (Standalone) | **Termux CLI** |
 |---|---|---|
-| Install | Build APK or download release | `npm install -g openclawd-termux` |
-| Setup | Tap "Begin Setup" | `openclawdx setup` |
-| Gateway | Tap "Start Gateway" | `openclawdx start` |
+| Install | Build APK or download release | `npm install -g openclaw-termux` |
+| Setup | Tap "Begin Setup" | `openclawx setup` |
+| Gateway | Tap "Start Gateway" | `openclawx start` |
 | Terminal | Built-in terminal emulator | Termux shell |
 | Dashboard | Built-in WebView | Browser at `localhost:18789` |
 
@@ -55,19 +56,51 @@ OpenClaw brings the [OpenClaw](https://github.com/anthropics/openclaw) AI gatewa
 - **One-Tap Setup** — Downloads Ubuntu rootfs, Node.js 22, and OpenClaw automatically
 - **Built-in Terminal** — Full terminal emulator with extra keys toolbar, copy/paste, clickable URLs
 - **Gateway Controls** — Start/stop gateway with status indicator and health checks
+- **Node Device Capabilities** — 7 capabilities (15 commands) exposed to AI via WebSocket node protocol
 - **Token URL Display** — Captures auth token from onboarding, shows it with a copy button
 - **Web Dashboard** — Embedded WebView loads the dashboard with authentication token
 - **View Logs** — Real-time gateway log viewer with search/filter
 - **Onboarding** — Configure API keys and binding directly in-app
-- **Settings** — Auto-start, battery optimization, system info, re-run setup
+- **Optional Packages** — Install Go (Golang) and Homebrew as optional dev tools from the setup wizard or dashboard
+- **Settings** — Auto-start, battery optimization, system info, package status, re-run setup
 - **Foreground Service** — Keeps the gateway alive in the background with uptime tracking
 - **Setup Notifications** — Progress bar notifications during environment setup
+
+### Optional Packages
+
+After the initial setup completes, you can optionally install development tools directly from the app:
+
+| Package | Install Method | Size |
+|---------|---------------|------|
+| **Go (Golang)** | `apt install golang` | ~150 MB |
+| **Homebrew** | Official installer (with root workaround) | ~500 MB |
+
+These are accessible from:
+- **Setup Wizard** — Package cards appear after setup completes
+- **Dashboard** — "Packages" card in Quick Actions
+- **Settings** — Shows installation status under System Info
+
+### Node Device Capabilities
+
+The Flutter app connects to the gateway as a **node**, exposing Android hardware to the AI. Permissions are requested proactively when the node is enabled.
+
+| Capability | Commands | Permission |
+|------------|----------|------------|
+| **Camera** | `camera.snap`, `camera.clip`, `camera.list` | Camera |
+| **Canvas** | `canvas.navigate`, `canvas.eval`, `canvas.snapshot` | None (not implemented) |
+| **Flash** | `flash.on`, `flash.off`, `flash.toggle`, `flash.status` | Camera (torch) |
+| **Location** | `location.get` | Location |
+| **Screen** | `screen.record` | MediaProjection consent |
+| **Sensor** | `sensor.read`, `sensor.list` | Body Sensors |
+| **Haptic** | `haptic.vibrate` | None |
+
+The gateway's `openclaw.json` is automatically patched before startup to clear `denyCommands` and set `allowCommands` for all 15 commands.
 
 ### Termux CLI
 - **One-Command Setup** — Installs proot-distro, Ubuntu, Node.js 22, and OpenClaw
 - **Bionic Bypass** — Fixes `os.networkInterfaces()` crash on Android's Bionic libc
 - **Smart Loading** — Shows spinner until the gateway is ready
-- **Pass-through Commands** — Run any OpenClaw command via `openclawdx`
+- **Pass-through Commands** — Run any OpenClaw command via `openclawx`
 
 ---
 
@@ -75,17 +108,18 @@ OpenClaw brings the [OpenClaw](https://github.com/anthropics/openclaw) AI gatewa
 
 ### Flutter App (Recommended)
 
-1. Download the latest APK from [Releases](https://github.com/mithun50/openclawd-termux/releases)
+1. Download the latest APK from [Releases](https://github.com/mithun50/openclaw-termux/releases)
 2. Install the APK on your Android device
 3. Open the app and tap **Begin Setup**
-4. After setup completes, configure your API keys in **Onboarding**
-5. Tap **Start Gateway** on the dashboard
+4. After setup completes, optionally install **Go** or **Homebrew** from the package cards
+5. Configure your API keys in **Onboarding**
+6. Tap **Start Gateway** on the dashboard
 
 Or build from source:
 
 ```bash
-git clone https://github.com/mithun50/openclawd-termux.git
-cd openclawd-termux/flutter_app
+git clone https://github.com/mithun50/openclaw-termux.git
+cd openclaw-termux/flutter_app
 flutter build apk --release
 ```
 
@@ -94,14 +128,14 @@ flutter build apk --release
 #### One-liner (recommended)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mithun50/openclawd-termux/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mithun50/openclaw-termux/main/install.sh | bash
 ```
 
 #### Or via npm
 
 ```bash
-npm install -g openclawd-termux
-openclawdx setup
+npm install -g openclaw-termux
+openclawx setup
 ```
 
 ---
@@ -121,23 +155,23 @@ openclawdx setup
 
 ```bash
 # First-time setup (installs proot + Ubuntu + Node.js + OpenClaw)
-openclawdx setup
+openclawx setup
 
 # Check installation status
-openclawdx status
+openclawx status
 
 # Start OpenClaw gateway
-openclawdx start
+openclawx start
 
 # Run onboarding to configure API keys
-openclawdx onboarding
+openclawx onboarding
 
 # Enter Ubuntu shell
-openclawdx shell
+openclawx shell
 
 # Any OpenClaw command works directly
-openclawdx doctor
-openclawdx gateway --verbose
+openclawx doctor
+openclawx gateway --verbose
 ```
 
 ---
@@ -145,28 +179,36 @@ openclawdx gateway --verbose
 ## Architecture
 
 ```
-┌──────────────────────────────────────────────┐
-│              Flutter App (Dart)               │
-│  ┌──────────┐ ┌──────────┐ ┌──────────────┐  │
-│  │ Terminal  │ │ Gateway  │ │ Web Dashboard│  │
-│  │ Emulator  │ │ Controls │ │   (WebView)  │  │
-│  └─────┬────┘ └─────┬────┘ └──────┬───────┘  │
-│        │            │             │           │
-│  ┌─────┴────────────┴─────────────┴────────┐  │
-│  │         Native Bridge (Kotlin)          │  │
-│  └─────────────────┬───────────────────────┘  │
-└────────────────────┼─────────────────────────┘
+┌───────────────────────────────────────────────────┐
+│                Flutter App (Dart)                  │
+│  ┌──────────┐ ┌──────────┐ ┌──────────────┐       │
+│  │ Terminal  │ │ Gateway  │ │ Web Dashboard│       │
+│  │ Emulator  │ │ Controls │ │   (WebView)  │       │
+│  └─────┬────┘ └─────┬────┘ └──────┬───────┘       │
+│        │            │             │                │
+│  ┌─────┴────────────┴─────────────┴─────────────┐  │
+│  │           Native Bridge (Kotlin)             │  │
+│  └─────────────────┬────────────────────────────┘  │
+│                    │                               │
+│  ┌─────────────────┴────────────────────────────┐  │
+│  │         Node Provider (WebSocket)            │  │
+│  │  Camera · Flash · Location · Screen          │  │
+│  │  Sensor · Haptic · Canvas                    │  │
+│  └─────────────────┬────────────────────────────┘  │
+└────────────────────┼──────────────────────────────┘
                      │
-┌────────────────────┼─────────────────────────┐
-│  proot-distro      │          Ubuntu          │
-│  ┌─────────────────┴──────────────────────┐   │
-│  │   Node.js 22 + Bionic Bypass           │   │
-│  │   ┌─────────────────────────────────┐  │   │
-│  │   │  OpenClaw AI Gateway            │  │   │
-│  │   │  http://localhost:18789         │  │   │
-│  │   └─────────────────────────────────┘  │   │
-│  └────────────────────────────────────────┘   │
-└───────────────────────────────────────────────┘
+┌────────────────────┼──────────────────────────────┐
+│  proot-distro      │              Ubuntu          │
+│  ┌─────────────────┴──────────────────────────┐   │
+│  │   Node.js 22 + Bionic Bypass               │   │
+│  │   ┌─────────────────────────────────────┐  │   │
+│  │   │  OpenClaw AI Gateway                │  │   │
+│  │   │  http://localhost:18789             │  │   │
+│  │   │  ← Node WS: 15 device commands     │  │   │
+│  │   └─────────────────────────────────────┘  │   │
+│  │   Optional: Go, Homebrew                  │   │
+│  └────────────────────────────────────────────┘   │
+└───────────────────────────────────────────────────┘
 ```
 
 ### Flutter App Structure
@@ -177,25 +219,44 @@ flutter_app/lib/
 ├── constants.dart             # App constants, URLs, author info
 ├── models/
 │   ├── gateway_state.dart     # Gateway status, logs, token URL
-│   └── setup_state.dart       # Setup wizard progress
+│   ├── node_state.dart        # Node connection status
+│   ├── node_frame.dart        # WebSocket frame model (req/res/event)
+│   ├── setup_state.dart       # Setup wizard progress
+│   └── optional_package.dart  # Optional package metadata (Go, Homebrew)
 ├── providers/
 │   ├── gateway_provider.dart  # Gateway state management
+│   ├── node_provider.dart     # Node capabilities + permission management
 │   └── setup_provider.dart    # Setup state management
 ├── screens/
 │   ├── splash_screen.dart     # Launch screen with routing
-│   ├── setup_wizard_screen.dart # First-time environment setup
-│   ├── onboarding_screen.dart # API key configuration terminal
-│   ├── dashboard_screen.dart  # Main dashboard with quick actions
-│   ├── terminal_screen.dart   # Full terminal emulator
-│   ├── web_dashboard_screen.dart # WebView for OpenClaw dashboard
-│   ├── logs_screen.dart       # Gateway log viewer
-│   └── settings_screen.dart   # App settings and about
+│   ├── setup_wizard_screen.dart    # First-time setup + optional packages
+│   ├── onboarding_screen.dart      # API key configuration terminal
+│   ├── dashboard_screen.dart       # Main dashboard with quick actions
+│   ├── terminal_screen.dart        # Full terminal emulator
+│   ├── web_dashboard_screen.dart   # WebView for OpenClaw dashboard
+│   ├── packages_screen.dart        # Optional package manager
+│   ├── package_install_screen.dart # Terminal-based package installer
+│   ├── logs_screen.dart            # Gateway log viewer
+│   └── settings_screen.dart        # App settings and about
 ├── services/
 │   ├── native_bridge.dart     # Kotlin platform channel bridge
-│   ├── gateway_service.dart   # Gateway lifecycle and health checks
+│   ├── gateway_service.dart   # Gateway lifecycle, health checks, config patching
+│   ├── node_service.dart      # Node WebSocket connection + invoke handling
+│   ├── node_ws_service.dart   # Raw WebSocket transport
+│   ├── node_identity_service.dart # Device identity + crypto signing
 │   ├── terminal_service.dart  # proot shell configuration
 │   ├── bootstrap_service.dart # Environment setup orchestration
-│   └── preferences_service.dart # Persistent settings (token URL, etc.)
+│   ├── package_service.dart   # Optional package status checking
+│   ├── preferences_service.dart # Persistent settings (token URL, etc.)
+│   └── capabilities/
+│       ├── capability_handler.dart   # Base class with permission handling
+│       ├── camera_capability.dart    # Photo/video capture
+│       ├── canvas_capability.dart    # WebView stub (NOT_IMPLEMENTED)
+│       ├── flash_capability.dart     # Torch on/off/toggle
+│       ├── location_capability.dart  # GPS with timeout + fallback
+│       ├── screen_capability.dart    # Screen recording via MediaProjection
+│       ├── sensor_capability.dart    # Accelerometer, gyroscope, etc.
+│       └── vibration_capability.dart # Haptic feedback
 └── widgets/
     ├── gateway_controls.dart  # Start/stop, URL display, copy button
     ├── terminal_toolbar.dart  # Extra keys (Tab, Ctrl, Esc, arrows)
@@ -209,7 +270,7 @@ flutter_app/lib/
 
 ### Onboarding
 
-When running onboarding (in-app or via `openclawdx onboarding`):
+When running onboarding (in-app or via `openclawx onboarding`):
 
 - **Binding**: Select `Loopback (127.0.0.1)` for non-rooted devices
 - **API Keys**: Add your Gemini/OpenAI/Claude keys
@@ -245,13 +306,13 @@ The Flutter app automatically loads the dashboard with your auth token via the b
 
 ```bash
 # Check status
-openclawdx status
+openclawx status
 
 # Re-run setup if needed
-openclawdx setup
+openclawx setup
 
 # Make sure onboarding is complete
-openclawdx onboarding
+openclawx onboarding
 ```
 
 ### "os.networkInterfaces" error
@@ -259,7 +320,7 @@ openclawdx onboarding
 Bionic Bypass not configured. Run setup again:
 
 ```bash
-openclawdx setup
+openclawx setup
 ```
 
 ### Process killed in background
@@ -299,8 +360,8 @@ npm install -g openclaw
 ### 3. Create Bionic Bypass
 
 ```bash
-mkdir -p ~/.openclawd
-cat > ~/.openclawd/bionic-bypass.js << 'EOF'
+mkdir -p ~/.openclaw
+cat > ~/.openclaw/bionic-bypass.js << 'EOF'
 const os = require('os');
 const originalNetworkInterfaces = os.networkInterfaces;
 os.networkInterfaces = function() {
@@ -327,7 +388,7 @@ EOF
 ### 4. Add to bashrc
 
 ```bash
-echo 'export NODE_OPTIONS="--require ~/.openclawd/bionic-bypass.js"' >> ~/.bashrc
+echo 'export NODE_OPTIONS="--require ~/.openclaw/bionic-bypass.js"' >> ~/.bashrc
 source ~/.bashrc
 ```
 

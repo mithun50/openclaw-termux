@@ -116,9 +116,10 @@ class GatewayService : Service() {
 
                 if (isRunning && restartCount < maxRestarts) {
                     restartCount++
-                    emitLog("Auto-restarting (attempt $restartCount/$maxRestarts)...")
-                    updateNotification("Restarting (attempt $restartCount)...")
-                    Thread.sleep(2000)
+                    val delayMs = 2000L * (1 shl (restartCount - 1)) // 2s, 4s, 8s
+                    emitLog("Auto-restarting in ${delayMs / 1000}s (attempt $restartCount/$maxRestarts)...")
+                    updateNotification("Restarting in ${delayMs / 1000}s (attempt $restartCount)...")
+                    Thread.sleep(delayMs)
                     startGateway()
                 } else if (restartCount >= maxRestarts) {
                     emitLog("Max restarts reached. Gateway stopped.")

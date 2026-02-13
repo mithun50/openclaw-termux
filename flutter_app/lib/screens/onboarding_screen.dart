@@ -45,10 +45,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   String _outputBuffer = '';
 
   static const _fontFallback = [
+    'monospace',
+    'Noto Sans Mono',
+    'Noto Sans Mono CJK SC',
+    'Noto Sans Mono CJK TC',
+    'Noto Sans Mono CJK JP',
     'Noto Color Emoji',
     'Noto Sans Symbols',
     'Noto Sans Symbols 2',
-    'Noto Sans Mono',
     'sans-serif',
   ];
 
@@ -58,17 +62,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _terminal = Terminal(maxLines: 10000);
     _controller = TerminalController();
     NativeBridge.startTerminalService();
-    _startOnboarding();
+    // Defer PTY start until after the first frame so TerminalView has been
+    // laid out and _terminal.viewWidth/viewHeight reflect real screen
+    // dimensions instead of the 80×24 default. This is critical for QR
+    // codes — the shell must know the actual column count to avoid wrapping.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startOnboarding();
+    });
   }
 
   Future<void> _startOnboarding() async {
     try {
       final config = await TerminalService.getProotShellConfig();
-      final args = TerminalService.buildProotArgs(config);
+      final args = TerminalService.buildProotArgs(
+        config,
+        columns: _terminal.viewWidth,
+        rows: _terminal.viewHeight,
+      );
 
       // Replace the login shell with a command that runs onboarding.
       // buildProotArgs ends with [..., '/bin/bash', '-l']
       // Replace with [..., '/bin/bash', '-lc', 'openclaw onboard']
+
       final onboardingArgs = List<String>.from(args);
       onboardingArgs.removeLast(); // remove '-l'
       onboardingArgs.removeLast(); // remove '/bin/bash'
@@ -438,8 +453,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 _terminal,
                 controller: _controller,
                 textStyle: const TerminalStyle(
-                  fontSize: 14,
-                  fontFamily: 'monospace',
+                  fontSize: 11,
+                  height: 1.0,
+                  fontFamily: 'DejaVuSansMono',
                   fontFamilyFallback: _fontFallback,
                 ),
                 onTapUp: _handleTap,

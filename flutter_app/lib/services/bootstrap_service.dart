@@ -211,7 +211,7 @@ class BootstrapService {
       ));
       // node-wrapper.js patches broken proot syscalls before loading npm.
       // /usr/local/bin is on PATH, so node finds the tarball's npm.
-      const wrapper = '/root/.openclawd/node-wrapper.js';
+      const wrapper = '/root/.openclaw/node-wrapper.js';
       const nodeRun = 'node $wrapper';
       // npm from nodejs.org tarball is at /usr/local/lib/node_modules/npm
       const npmCli = '/usr/local/lib/node_modules/npm/bin/npm-cli.js';

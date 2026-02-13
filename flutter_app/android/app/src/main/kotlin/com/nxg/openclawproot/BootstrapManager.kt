@@ -26,7 +26,7 @@ class BootstrapManager(
     private val libDir get() = "$filesDir/lib"
 
     fun setupDirectories() {
-        listOf(rootfsDir, tmpDir, homeDir, configDir, "$homeDir/.openclawd", libDir).forEach {
+        listOf(rootfsDir, tmpDir, homeDir, configDir, "$homeDir/.openclaw", libDir).forEach {
             File(it).mkdirs()
         }
         // Termux's proot links against libtalloc.so.2 but Android extracts it
@@ -49,16 +49,19 @@ class BootstrapManager(
     fun isBootstrapComplete(): Boolean {
         val rootfs = File(rootfsDir)
         val binBash = File("$rootfsDir/bin/bash")
-        val bypass = File("$rootfsDir/root/.openclawd/bionic-bypass.js")
+        val bypass = File("$rootfsDir/root/.openclaw/bionic-bypass.js")
+        val node = File("$rootfsDir/usr/local/bin/node")
+        val openclaw = File("$rootfsDir/usr/local/lib/node_modules/openclaw/package.json")
         return rootfs.exists() && binBash.exists() && bypass.exists()
+            && node.exists() && openclaw.exists()
     }
 
     fun getBootstrapStatus(): Map<String, Any> {
         val rootfsExists = File(rootfsDir).exists()
         val binBashExists = File("$rootfsDir/bin/bash").exists()
-        val nodeExists = checkNodeInProot()
-        val openclawExists = checkOpenClawInProot()
-        val bypassExists = File("$rootfsDir/root/.openclawd/bionic-bypass.js").exists()
+        val nodeExists = File("$rootfsDir/usr/local/bin/node").exists()
+        val openclawExists = File("$rootfsDir/usr/local/lib/node_modules/openclaw/package.json").exists()
+        val bypassExists = File("$rootfsDir/root/.openclaw/bionic-bypass.js").exists()
 
         return mapOf(
             "rootfsExists" to rootfsExists,
@@ -67,7 +70,8 @@ class BootstrapManager(
             "openclawInstalled" to openclawExists,
             "bypassInstalled" to bypassExists,
             "rootfsPath" to rootfsDir,
-            "complete" to (rootfsExists && binBashExists && bypassExists)
+            "complete" to (rootfsExists && binBashExists && bypassExists
+                && nodeExists && openclawExists)
         )
     }
 
@@ -394,7 +398,7 @@ class BootstrapManager(
         //    fails with "Operation not permitted". Tell apt to stay as root.
         val aptConfDir = File("$rootfsDir/etc/apt/apt.conf.d")
         aptConfDir.mkdirs()
-        File(aptConfDir, "01-openclawd-proot").writeText(
+        File(aptConfDir, "01-openclaw-proot").writeText(
             "APT::Sandbox::User \"root\";\n" +
             // Disable PTY allocation when APT forks dpkg. APT's child process
             // calls SetupSlavePtyMagic() before execvp(dpkg); in proot on
@@ -410,7 +414,7 @@ class BootstrapManager(
         //    - no-debsig: skip signature verification
         val dpkgConfDir = File("$rootfsDir/etc/dpkg/dpkg.cfg.d")
         dpkgConfDir.mkdirs()
-        File(dpkgConfDir, "01-openclawd-proot").writeText(
+        File(dpkgConfDir, "01-openclaw-proot").writeText(
             "force-unsafe-io\n" +
             "no-debsig\n" +
             "force-overwrite\n" +
@@ -437,13 +441,13 @@ class BootstrapManager(
             "$rootfsDir/usr/local/lib/node_modules",
             "$rootfsDir/usr/local/bin",
             // OpenClaw runtime directories (can't mkdir at runtime)
-            "$rootfsDir/root/.openclawd",
-            "$rootfsDir/root/.openclawd/data",
-            "$rootfsDir/root/.openclawd/memory",
-            "$rootfsDir/root/.openclawd/skills",
-            "$rootfsDir/root/.openclawd/config",
-            "$rootfsDir/root/.openclawd/extensions",
-            "$rootfsDir/root/.openclawd/logs",
+            "$rootfsDir/root/.openclaw",
+            "$rootfsDir/root/.openclaw/data",
+            "$rootfsDir/root/.openclaw/memory",
+            "$rootfsDir/root/.openclaw/skills",
+            "$rootfsDir/root/.openclaw/config",
+            "$rootfsDir/root/.openclaw/extensions",
+            "$rootfsDir/root/.openclaw/logs",
             "$rootfsDir/root/.config/openclaw",
             "$rootfsDir/root/.local/share",
             "$rootfsDir/root/.cache",
@@ -790,7 +794,7 @@ class BootstrapManager(
     }
 
     fun installBionicBypass() {
-        val bypassDir = File("$rootfsDir/root/.openclawd")
+        val bypassDir = File("$rootfsDir/root/.openclaw")
         bypassDir.mkdirs()
 
         // 1. CWD fix — proot's getcwd() syscall returns ENOSYS on Android 10+.
@@ -810,14 +814,14 @@ process.cwd = function() {
 
         // 2. Node wrapper — patches broken syscalls then runs the target script.
         //    Used during bootstrap (where NODE_OPTIONS must be unset).
-        //    Usage: node /root/.openclawd/node-wrapper.js <script> [args...]
+        //    Usage: node /root/.openclaw/node-wrapper.js <script> [args...]
         val wrapperContent = """
 // OpenClaw Node Wrapper - Auto-generated
 // Patches broken proot syscalls, then loads the target script.
 // Used for bootstrap-time npm operations.
 
 // --- Load shared proot compatibility patches ---
-require('/root/.openclawd/proot-compat.js');
+require('/root/.openclaw/proot-compat.js');
 
 // Load target script
 const script = process.argv[2];
@@ -1171,14 +1175,14 @@ _cp.execFileSync = function(file, args, options) {
         File(bypassDir, "proot-compat.js").writeText(prootCompatContent)
 
         // 4. Bionic bypass — comprehensive runtime patcher for openclaw.
-        //    Loaded via NODE_OPTIONS="--require /root/.openclawd/bionic-bypass.js"
+        //    Loaded via NODE_OPTIONS="--require /root/.openclaw/bionic-bypass.js"
         val bypassContent = """
 // OpenClaw Bionic Bypass - Auto-generated
 // Comprehensive runtime compatibility layer for proot on Android 10+.
 // Loaded via NODE_OPTIONS before any application code runs.
 
 // Load all proot compatibility patches (shared with node-wrapper.js)
-require('/root/.openclawd/proot-compat.js');
+require('/root/.openclaw/proot-compat.js');
 """.trimIndent()
 
         File(bypassDir, "bionic-bypass.js").writeText(bypassContent)
@@ -1198,7 +1202,7 @@ require('/root/.openclawd/proot-compat.js');
 
         // Patch .bashrc
         val bashrc = File("$rootfsDir/root/.bashrc")
-        val exportLine = "export NODE_OPTIONS=\"--require /root/.openclawd/bionic-bypass.js\""
+        val exportLine = "export NODE_OPTIONS=\"--require /root/.openclaw/bionic-bypass.js\""
 
         val existing = if (bashrc.exists()) bashrc.readText() else ""
         if (!existing.contains("bionic-bypass")) {

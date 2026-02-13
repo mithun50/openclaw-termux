@@ -15,6 +15,16 @@ import android.os.PowerManager
 import android.provider.Settings
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import android.app.Activity
+import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import android.media.projection.MediaProjectionManager
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
@@ -26,6 +36,8 @@ class MainActivity : FlutterActivity() {
 
     private lateinit var bootstrapManager: BootstrapManager
     private lateinit var processManager: ProcessManager
+    private var screenCaptureResult: MethodChannel.Result? = null
+    private var screenCaptureDurationMs: Long = 5000L
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -124,6 +136,25 @@ class MainActivity : FlutterActivity() {
                 }
                 "isTerminalServiceRunning" -> {
                     result.success(TerminalSessionService.isRunning)
+                }
+                "startNodeService" -> {
+                    try {
+                        NodeForegroundService.start(applicationContext)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("SERVICE_ERROR", e.message, null)
+                    }
+                }
+                "stopNodeService" -> {
+                    try {
+                        NodeForegroundService.stop(applicationContext)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("SERVICE_ERROR", e.message, null)
+                    }
+                }
+                "isNodeServiceRunning" -> {
+                    result.success(NodeForegroundService.isRunning)
                 }
                 "requestBatteryOptimization" -> {
                     try {
@@ -256,6 +287,114 @@ class MainActivity : FlutterActivity() {
                         result.error("INVALID_ARGS", "text required", null)
                     }
                 }
+                "requestScreenCapture" -> {
+                    val durationMs = call.argument<Int>("durationMs")?.toLong() ?: 5000L
+                    screenCaptureResult = result
+                    screenCaptureDurationMs = durationMs
+                    ScreenCaptureService.clearResult()
+                    val projectionManager =
+                        getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+                    startActivityForResult(
+                        projectionManager.createScreenCaptureIntent(),
+                        SCREEN_CAPTURE_REQUEST
+                    )
+                }
+                "stopScreenCapture" -> {
+                    try {
+                        stopService(Intent(applicationContext, ScreenCaptureService::class.java))
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("SERVICE_ERROR", e.message, null)
+                    }
+                }
+                "vibrate" -> {
+                    val durationMs = call.argument<Int>("durationMs")?.toLong() ?: 200L
+                    try {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            val vibratorManager =
+                                getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                            val vibrator = vibratorManager.defaultVibrator
+                            vibrator.vibrate(
+                                VibrationEffect.createOneShot(durationMs, VibrationEffect.DEFAULT_AMPLITUDE)
+                            )
+                        } else {
+                            @Suppress("DEPRECATION")
+                            val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                vibrator.vibrate(
+                                    VibrationEffect.createOneShot(durationMs, VibrationEffect.DEFAULT_AMPLITUDE)
+                                )
+                            } else {
+                                @Suppress("DEPRECATION")
+                                vibrator.vibrate(durationMs)
+                            }
+                        }
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("VIBRATE_ERROR", e.message, null)
+                    }
+                }
+                "readSensor" -> {
+                    val sensorType = call.argument<String>("sensor") ?: "accelerometer"
+                    Thread {
+                        try {
+                            val sensorManager =
+                                getSystemService(Context.SENSOR_SERVICE) as SensorManager
+                            val type = when (sensorType) {
+                                "accelerometer" -> Sensor.TYPE_ACCELEROMETER
+                                "gyroscope" -> Sensor.TYPE_GYROSCOPE
+                                "magnetometer" -> Sensor.TYPE_MAGNETIC_FIELD
+                                "barometer" -> Sensor.TYPE_PRESSURE
+                                else -> Sensor.TYPE_ACCELEROMETER
+                            }
+                            val sensor = sensorManager.getDefaultSensor(type)
+                            if (sensor == null) {
+                                runOnUiThread {
+                                    result.error("SENSOR_ERROR", "Sensor $sensorType not available", null)
+                                }
+                                return@Thread
+                            }
+                            var received = false
+                            val listener = object : SensorEventListener {
+                                override fun onSensorChanged(event: SensorEvent?) {
+                                    if (received || event == null) return
+                                    received = true
+                                    sensorManager.unregisterListener(this)
+                                    val data = hashMapOf<String, Any>(
+                                        "sensor" to sensorType,
+                                        "timestamp" to event.timestamp,
+                                        "accuracy" to event.accuracy
+                                    )
+                                    when (sensorType) {
+                                        "accelerometer", "gyroscope", "magnetometer" -> {
+                                            data["x"] = event.values[0].toDouble()
+                                            data["y"] = event.values[1].toDouble()
+                                            data["z"] = event.values[2].toDouble()
+                                        }
+                                        "barometer" -> {
+                                            data["pressure"] = event.values[0].toDouble()
+                                        }
+                                    }
+                                    runOnUiThread { result.success(data) }
+                                }
+                                override fun onAccuracyChanged(s: Sensor?, accuracy: Int) {}
+                            }
+                            sensorManager.registerListener(
+                                listener, sensor, SensorManager.SENSOR_DELAY_NORMAL
+                            )
+                            // Timeout after 3 seconds
+                            Thread.sleep(3000)
+                            if (!received) {
+                                sensorManager.unregisterListener(listener)
+                                runOnUiThread {
+                                    result.error("SENSOR_ERROR", "Sensor read timed out", null)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            runOnUiThread { result.error("SENSOR_ERROR", e.message, null) }
+                        }
+                    }.start()
+                }
                 else -> {
                     result.notImplemented()
                 }
@@ -338,8 +477,45 @@ class MainActivity : FlutterActivity() {
         manager.notify(urlNotificationId++, notification)
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == SCREEN_CAPTURE_REQUEST) {
+            if (resultCode == Activity.RESULT_OK && data != null) {
+                val intent = Intent(applicationContext, ScreenCaptureService::class.java).apply {
+                    putExtra("resultCode", resultCode)
+                    putExtra("data", data)
+                    putExtra("durationMs", screenCaptureDurationMs)
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(intent)
+                } else {
+                    startService(intent)
+                }
+                // Poll for result
+                Thread {
+                    val startTime = System.currentTimeMillis()
+                    val timeout = screenCaptureDurationMs + 5000L
+                    while (ScreenCaptureService.resultPath == null &&
+                        System.currentTimeMillis() - startTime < timeout
+                    ) {
+                        Thread.sleep(200)
+                    }
+                    val path = ScreenCaptureService.resultPath
+                    runOnUiThread {
+                        screenCaptureResult?.success(path)
+                        screenCaptureResult = null
+                    }
+                }.start()
+            } else {
+                screenCaptureResult?.success(null)
+                screenCaptureResult = null
+            }
+        }
+    }
+
     companion object {
         const val URL_CHANNEL_ID = "openclaw_urls"
         const val NOTIFICATION_PERMISSION_REQUEST = 1001
+        const val SCREEN_CAPTURE_REQUEST = 1002
     }
 }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../constants.dart';
 import '../models/gateway_state.dart';
@@ -31,7 +32,8 @@ class GatewayService {
   }
 
   /// Check if the gateway is already running (e.g. after app restart)
-  /// and sync the UI state accordingly.
+  /// and sync the UI state accordingly.  If not running but auto-start
+  /// is enabled, start it automatically.
   Future<void> init() async {
     final prefs = PreferencesService();
     await prefs.init();
@@ -39,68 +41,102 @@ class GatewayService {
 
     final alreadyRunning = await NativeBridge.isGatewayRunning();
     if (alreadyRunning) {
+      // Write allowCommands config so the next gateway restart picks it up,
+      // and in case the running gateway supports config hot-reload.
+      await _writeNodeAllowConfig();
       _updateState(_state.copyWith(
         status: GatewayStatus.starting,
         dashboardUrl: savedUrl,
         logs: [..._state.logs, '[INFO] Gateway process detected, reconnecting...'],
       ));
 
-      // Subscribe to log stream from the running service
-      _logSubscription = NativeBridge.gatewayLogStream.listen((log) {
-        final logs = [..._state.logs, log];
-        if (logs.length > 500) {
-          logs.removeRange(0, logs.length - 500);
-        }
-        String? dashboardUrl;
-        final cleanLog = _cleanForUrl(log);
-        final urlMatch = _tokenUrlRegex.firstMatch(cleanLog);
-        if (urlMatch != null) {
-          dashboardUrl = urlMatch.group(0);
-          final prefs = PreferencesService();
-          prefs.init().then((_) => prefs.dashboardUrl = dashboardUrl);
-        }
-        _updateState(_state.copyWith(logs: logs, dashboardUrl: dashboardUrl));
-      });
-
-      // Run a health check to confirm it's actually responding
+      _subscribeLogs();
       _startHealthCheck();
+    } else if (prefs.autoStartGateway) {
+      _updateState(_state.copyWith(
+        logs: [..._state.logs, '[INFO] Auto-starting gateway...'],
+      ));
+      await start();
     }
   }
 
+  void _subscribeLogs() {
+    _logSubscription?.cancel();
+    _logSubscription = NativeBridge.gatewayLogStream.listen((log) {
+      final logs = [..._state.logs, log];
+      if (logs.length > 500) {
+        logs.removeRange(0, logs.length - 500);
+      }
+      String? dashboardUrl;
+      final cleanLog = _cleanForUrl(log);
+      final urlMatch = _tokenUrlRegex.firstMatch(cleanLog);
+      if (urlMatch != null) {
+        dashboardUrl = urlMatch.group(0);
+        final prefs = PreferencesService();
+        prefs.init().then((_) => prefs.dashboardUrl = dashboardUrl);
+      }
+      _updateState(_state.copyWith(logs: logs, dashboardUrl: dashboardUrl));
+    });
+  }
+
+  /// Patch /root/.openclaw/openclaw.json to clear denyCommands and set
+  /// allowCommands for all node capabilities. This is the config file the
+  /// gateway actually reads (not a separate gateway.json).
+  Future<void> _writeNodeAllowConfig() async {
+    const allowCommands = [
+      'camera.snap', 'camera.clip', 'camera.list',
+      'canvas.navigate', 'canvas.eval', 'canvas.snapshot',
+      'flash.on', 'flash.off', 'flash.toggle', 'flash.status',
+      'location.get',
+      'screen.record',
+      'sensor.read', 'sensor.list',
+      'haptic.vibrate',
+    ];
+    // Use a Node.js one-liner to safely merge into existing openclaw.json
+    // without clobbering other settings (API keys, onboarding config, etc.)
+    final allowJson = jsonEncode(allowCommands);
+    final script = '''
+const fs = require("fs");
+const p = "/root/.openclaw/openclaw.json";
+let c = {};
+try { c = JSON.parse(fs.readFileSync(p, "utf8")); } catch {}
+if (!c.gateway) c.gateway = {};
+if (!c.gateway.nodes) c.gateway.nodes = {};
+c.gateway.nodes.denyCommands = [];
+c.gateway.nodes.allowCommands = $allowJson;
+fs.writeFileSync(p, JSON.stringify(c, null, 2));
+''';
+    try {
+      await NativeBridge.runInProot(
+        'node -e ${_shellEscape(script)}',
+        timeout: 15,
+      );
+    } catch (_) {
+      // Non-fatal: gateway may still work with default policy
+    }
+  }
+
+  /// Escape a string for use as a single-quoted shell argument.
+  static String _shellEscape(String s) {
+    return "'${s.replaceAll("'", "'\\''")}'";
+  }
+
   Future<void> start() async {
-    // Load saved token URL from preferences
     final prefs = PreferencesService();
     await prefs.init();
     final savedUrl = prefs.dashboardUrl;
 
     _updateState(_state.copyWith(
       status: GatewayStatus.starting,
+      clearError: true,
       logs: [..._state.logs, '[INFO] Starting gateway...'],
       dashboardUrl: savedUrl,
     ));
 
     try {
+      await _writeNodeAllowConfig();
       await NativeBridge.startGateway();
-
-      _logSubscription = NativeBridge.gatewayLogStream.listen((log) {
-        final logs = [..._state.logs, log];
-        // Keep last 500 lines
-        if (logs.length > 500) {
-          logs.removeRange(0, logs.length - 500);
-        }
-        // Parse log for token URL — strip ANSI, box-drawing, whitespace
-        String? dashboardUrl;
-        final cleanLog = _cleanForUrl(log);
-        final urlMatch = _tokenUrlRegex.firstMatch(cleanLog);
-        if (urlMatch != null) {
-          dashboardUrl = urlMatch.group(0);
-          // Persist clean URL for next startup
-          final prefs = PreferencesService();
-          prefs.init().then((_) => prefs.dashboardUrl = dashboardUrl);
-        }
-        _updateState(_state.copyWith(logs: logs, dashboardUrl: dashboardUrl));
-      });
-
+      _subscribeLogs();
       _startHealthCheck();
     } catch (e) {
       _updateState(_state.copyWith(

@@ -1,6 +1,6 @@
 class AppConstants {
   static const String appName = 'OpenClaw';
-  static const String version = '1.0.0';
+  static const String version = '1.6.1';
   static const String packageName = 'com.nxg.openclawproot';
 
   /// Matches ANSI escape sequences (e.g. color codes in terminal output).
@@ -8,7 +8,7 @@ class AppConstants {
 
   static const String authorName = 'Mithun Gowda B';
   static const String authorEmail = 'mithungowda.b7411@gmail.com';
-  static const String githubUrl = 'https://github.com/mithun50/openclawd-termux';
+  static const String githubUrl = 'https://github.com/mithun50/openclaw-termux';
   static const String license = 'MIT';
 
   // NextGenX
@@ -49,6 +49,13 @@ class AppConstants {
 
   static const int healthCheckIntervalMs = 5000;
   static const int maxAutoRestarts = 3;
+
+  // Node constants
+  static const int wsReconnectBaseMs = 350;
+  static const double wsReconnectMultiplier = 1.7;
+  static const int wsReconnectCapMs = 8000;
+  static const String nodeRole = 'node';
+  static const int pairingTimeoutMs = 300000;
 
   static const String channelName = 'com.nxg.openclawproot/native';
   static const String eventChannelName = 'com.nxg.openclawproot/gateway_logs';

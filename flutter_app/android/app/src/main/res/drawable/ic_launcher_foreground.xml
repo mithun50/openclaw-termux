@@ -4,8 +4,76 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Cloud icon -->
+
+    <!-- Left antenna (lobster-style, curved outward) -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,36c-5.5,0 -10.2,3.3 -12.3,8 -6.8,0.5 -12.2,6.1 -12.2,13 0,7.2 5.8,13 13,13h25c5.8,0 10.5,-4.7 10.5,-10.5 0,-5.5 -4.2,-10 -9.6,-10.4C67,42.5 61.2,36 54,36z"/>
+        android:pathData="M44,29 C41,24 37,20 34,19"
+        android:strokeColor="#E53935"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"/>
+
+    <!-- Right antenna -->
+    <path
+        android:pathData="M64,29 C67,24 71,20 74,19"
+        android:strokeColor="#E53935"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"/>
+
+    <!-- Head (Android semicircle) -->
+    <path
+        android:pathData="M37,44 C37,29 71,29 71,44 Z"
+        android:fillColor="#E53935"/>
+
+    <!-- Left eye -->
+    <path
+        android:pathData="M47,37 m-2.2,0 a2.2,2.2 0 1,0 4.4,0 a2.2,2.2 0 1,0 -4.4,0"
+        android:fillColor="#0F1B2D"/>
+
+    <!-- Right eye -->
+    <path
+        android:pathData="M61,37 m-2.2,0 a2.2,2.2 0 1,0 4.4,0 a2.2,2.2 0 1,0 -4.4,0"
+        android:fillColor="#0F1B2D"/>
+
+    <!-- Body -->
+    <path
+        android:pathData="M37,47 L71,47 Q75,47 75,51 L75,65 Q75,69 71,69 L37,69 Q33,69 33,65 L33,51 Q33,47 37,47 Z"
+        android:fillColor="#E53935"/>
+
+    <!-- Left claw upper prong -->
+    <path
+        android:pathData="M37,52 L29,49 C25,47 21,48 21,52"
+        android:strokeColor="#E53935"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"/>
+
+    <!-- Left claw lower prong -->
+    <path
+        android:pathData="M37,57 L29,60 C25,62 21,61 21,57"
+        android:strokeColor="#E53935"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"/>
+
+    <!-- Right claw upper prong -->
+    <path
+        android:pathData="M71,52 L79,49 C83,47 87,48 87,52"
+        android:strokeColor="#E53935"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"/>
+
+    <!-- Right claw lower prong -->
+    <path
+        android:pathData="M71,57 L79,60 C83,62 87,61 87,57"
+        android:strokeColor="#E53935"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"/>
+
+    <!-- Left leg -->
+    <path
+        android:pathData="M43,69 L43,79 Q43,82.5 46.5,82.5 Q50,82.5 50,79 L50,69"
+        android:fillColor="#E53935"/>
+
+    <!-- Right leg -->
+    <path
+        android:pathData="M58,69 L58,79 Q58,82.5 61.5,82.5 Q65,82.5 65,79 L65,69"
+        android:fillColor="#E53935"/>
 </vector>

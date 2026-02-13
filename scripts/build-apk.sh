@@ -1,12 +1,12 @@
 #!/bin/bash
-# Build the OpenClawd Flutter APK
+# Build the OpenClaw Flutter APK
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$SCRIPT_DIR/.."
 FLUTTER_DIR="$PROJECT_DIR/flutter_app"
 
-echo "=== OpenClawd APK Build ==="
+echo "=== OpenClaw APK Build ==="
 echo ""
 
 # Step 1: Fetch proot binaries if not present

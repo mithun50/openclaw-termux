@@ -1,4 +1,4 @@
-// OpenClawd Bionic Bypass - Auto-generated
+// OpenClaw Bionic Bypass - Auto-generated
 const os = require('os');
 const originalNetworkInterfaces = os.networkInterfaces;
 

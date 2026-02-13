@@ -3,6 +3,12 @@
 .git/
 .gitignore
 
+# Flutter app
+flutter_app/
+
+# Claude Code
+.claude/
+
 # Config files
 eslint.config.js
 .eslintrc*

@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0A1628"/>
+      <stop offset="100%" style="stop-color:#1A2744"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#E53935"/>
+      <stop offset="100%" style="stop-color:#FF6F61"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#E53935;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#E53935;stop-opacity:0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Subtle grid pattern -->
+  <g opacity="0.04" stroke="#fff" stroke-width="0.5">
+    <line x1="0" y1="0" x2="1200" y2="630"/>
+    <line x1="200" y1="0" x2="1200" y2="500"/>
+    <line x1="400" y1="0" x2="1200" y2="400"/>
+    <line x1="0" y1="200" x2="800" y2="630"/>
+    <line x1="0" y1="400" x2="400" y2="630"/>
+    <line x1="600" y1="0" x2="1200" y2="300"/>
+    <line x1="800" y1="0" x2="1200" y2="200"/>
+  </g>
+
+  <!-- Glow behind logo -->
+  <circle cx="160" cy="315" r="120" fill="url(#glow)"/>
+
+  <!-- Logo (scaled from ic_launcher.svg) -->
+  <g transform="translate(92, 247) scale(1.25)">
+    <rect width="108" height="108" rx="24" fill="#0F1B2D" stroke="#E53935" stroke-width="1.5" stroke-opacity="0.4"/>
+    <path d="M44,29 C41,24 37,20 34,19" stroke="#E53935" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+    <path d="M64,29 C67,24 71,20 74,19" stroke="#E53935" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+    <path d="M37,44 C37,29 71,29 71,44 Z" fill="#E53935"/>
+    <circle cx="47" cy="37" r="2.2" fill="#0F1B2D"/>
+    <circle cx="61" cy="37" r="2.2" fill="#0F1B2D"/>
+    <rect x="37" y="47" width="34" height="22" rx="4" fill="#E53935"/>
+    <path d="M37,52 L29,49 C25,47 21,48 21,52" stroke="#E53935" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <path d="M37,57 L29,60 C25,62 21,61 21,57" stroke="#E53935" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <path d="M71,52 L79,49 C83,47 87,48 87,52" stroke="#E53935" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <path d="M71,57 L79,60 C83,62 87,61 87,57" stroke="#E53935" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <rect x="43" y="69" width="7" height="10" rx="3.5" fill="#E53935"/>
+    <rect x="58" y="69" width="7" height="10" rx="3.5" fill="#E53935"/>
+  </g>
+
+  <!-- Title -->
+  <text x="310" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="800" fill="#FFFFFF">OpenClaw</text>
+  <text x="310" y="310" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="400" fill="#8899AA" letter-spacing="4">AI GATEWAY FOR ANDROID</text>
+
+  <!-- Version badge -->
+  <rect x="310" y="330" width="90" height="32" rx="16" fill="url(#accent)"/>
+  <text x="355" y="351" font-family="system-ui, monospace" font-size="15" font-weight="700" fill="#FFFFFF" text-anchor="middle">v1.6.1</text>
+  <text x="416" y="351" font-family="system-ui, sans-serif" font-size="15" fill="#8899AA">Node Capabilities + Background Resilience</text>
+
+  <!-- Divider -->
+  <line x1="310" y1="385" x2="1100" y2="385" stroke="#E53935" stroke-width="1" stroke-opacity="0.3"/>
+
+  <!-- Feature columns -->
+  <!-- Column 1: Node Capabilities -->
+  <text x="340" y="420" font-family="system-ui, sans-serif" font-size="16" font-weight="700" fill="#E53935">NODE CAPABILITIES</text>
+  <circle cx="325" cy="448" r="4" fill="#4CAF50"/>
+  <text x="340" y="453" font-family="system-ui, sans-serif" font-size="14" fill="#CCCCCC">7 capabilities, 15 commands</text>
+  <circle cx="325" cy="473" r="4" fill="#4CAF50"/>
+  <text x="340" y="478" font-family="system-ui, sans-serif" font-size="14" fill="#CCCCCC">Camera, Flash, Location, Sensor</text>
+  <circle cx="325" cy="498" r="4" fill="#4CAF50"/>
+  <text x="340" y="503" font-family="system-ui, sans-serif" font-size="14" fill="#CCCCCC">Screen, Haptic, Canvas</text>
+  <circle cx="325" cy="523" r="4" fill="#4CAF50"/>
+  <text x="340" y="528" font-family="system-ui, sans-serif" font-size="14" fill="#CCCCCC">Proactive permission requests</text>
+
+  <!-- Column 2: Background -->
+  <text x="660" y="420" font-family="system-ui, sans-serif" font-size="16" font-weight="700" fill="#E53935">BACKGROUND RESILIENCE</text>
+  <circle cx="645" cy="448" r="4" fill="#2196F3"/>
+  <text x="660" y="453" font-family="system-ui, sans-serif" font-size="14" fill="#CCCCCC">WebSocket keep-alive ping (30s)</text>
+  <circle cx="645" cy="473" r="4" fill="#2196F3"/>
+  <text x="660" y="478" font-family="system-ui, sans-serif" font-size="14" fill="#CCCCCC">Connection watchdog (45s)</text>
+  <circle cx="645" cy="498" r="4" fill="#2196F3"/>
+  <text x="660" y="503" font-family="system-ui, sans-serif" font-size="14" fill="#CCCCCC">Stale connection detection (90s)</text>
+  <circle cx="645" cy="523" r="4" fill="#2196F3"/>
+  <text x="660" y="528" font-family="system-ui, sans-serif" font-size="14" fill="#CCCCCC">Auto-reconnect on app resume</text>
+
+  <!-- Column 3: Fixes -->
+  <text x="980" y="420" font-family="system-ui, sans-serif" font-size="16" font-weight="700" fill="#E53935">FIXES</text>
+  <circle cx="965" cy="448" r="4" fill="#FF9800"/>
+  <text x="980" y="453" font-family="system-ui, sans-serif" font-size="14" fill="#CCCCCC">Gateway allowlist config</text>
+  <circle cx="965" cy="473" r="4" fill="#FF9800"/>
+  <text x="980" y="478" font-family="system-ui, sans-serif" font-size="14" fill="#CCCCCC">Location timeout fix</text>
+  <circle cx="965" cy="498" r="4" fill="#FF9800"/>
+  <text x="980" y="503" font-family="system-ui, sans-serif" font-size="14" fill="#CCCCCC">Canvas honest errors</text>
+  <circle cx="965" cy="523" r="4" fill="#FF9800"/>
+  <text x="980" y="528" font-family="system-ui, sans-serif" font-size="14" fill="#CCCCCC">Battery optimization</text>
+
+  <!-- Footer -->
+  <line x1="50" y1="575" x2="1150" y2="575" stroke="#ffffff" stroke-width="0.5" stroke-opacity="0.1"/>
+  <text x="60" y="605" font-family="system-ui, sans-serif" font-size="13" fill="#556677">github.com/mithun50/openclaw-termux</text>
+  <text x="1140" y="605" font-family="system-ui, sans-serif" font-size="13" fill="#556677" text-anchor="end">by Mithun Gowda B  |  NextGenX  |  MIT License</text>
+</svg>

@@ -1,12 +1,12 @@
 {
-  "name": "openclawd-termux",
-  "version": "1.0.0",
+  "name": "openclaw-termux",
+  "version": "1.6.1",
   "description": "OpenClaw AI Gateway for Android Termux with Bionic Bypass",
   "main": "lib/index.js",
   "type": "module",
   "bin": {
-    "openclawdx": "bin/openclawdx",
-    "openclawdx-setup": "bin/openclawdx"
+    "openclawx": "bin/openclawx",
+    "openclawx-setup": "bin/openclawx"
   },
   "scripts": {
     "test": "node lib/test.js",
@@ -27,11 +27,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mithun50/openclawd-termux.git"
+    "url": "git+https://github.com/mithun50/openclaw-termux.git"
   },
-  "homepage": "https://github.com/mithun50/openclawd-termux#readme",
+  "homepage": "https://github.com/mithun50/openclaw-termux#readme",
   "bugs": {
-    "url": "https://github.com/mithun50/openclawd-termux/issues"
+    "url": "https://github.com/mithun50/openclaw-termux/issues"
   },
   "engines": {
     "node": ">=18.0.0"
