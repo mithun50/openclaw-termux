@@ -73,23 +73,25 @@ class _NodeScreenState extends State<NodeScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            RadioListTile<bool>(
-                              title: const Text('Local Gateway'),
-                              subtitle: const Text('Auto-pair with gateway on this device'),
-                              value: true,
-                              groupValue: _isLocal,
+                            RadioGroup<bool>(
+                              value: _isLocal,
                               onChanged: (value) {
-                                setState(() => _isLocal = value!);
+                                setState(() => _isLocal = value);
                               },
-                            ),
-                            RadioListTile<bool>(
-                              title: const Text('Remote Gateway'),
-                              subtitle: const Text('Connect to a gateway on another device'),
-                              value: false,
-                              groupValue: _isLocal,
-                              onChanged: (value) {
-                                setState(() => _isLocal = value!);
-                              },
+                              child: Column(
+                                children: [
+                                  RadioListTile<bool>(
+                                    title: const Text('Local Gateway'),
+                                    subtitle: const Text('Auto-pair with gateway on this device'),
+                                    value: true,
+                                  ),
+                                  RadioListTile<bool>(
+                                    title: const Text('Remote Gateway'),
+                                    subtitle: const Text('Connect to a gateway on another device'),
+                                    value: false,
+                                  ),
+                                ],
+                              ),
                             ),
                             if (!_isLocal) ...[
                               const SizedBox(height: 12),

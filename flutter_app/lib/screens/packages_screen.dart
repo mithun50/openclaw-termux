@@ -111,7 +111,7 @@ class _PackagesScreenState extends State<PackagesScreen> {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: package.color.withOpacity(0.15),
+                color: package.color.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(package.icon, color: package.color),
@@ -137,7 +137,7 @@ class _PackagesScreenState extends State<PackagesScreen> {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.15),
+                            color: Colors.green.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
