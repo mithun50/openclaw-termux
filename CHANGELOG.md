@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.7.1 — Background Persistence & Camera Fix
+
+> Requires Android 10+ (API 29)
+
+### Node Background Persistence
+
+- **Lifecycle-Aware Reconnection** — Handles both `resumed` and `paused` lifecycle states; forces connection health check on app resume since Dart timers freeze while backgrounded
+- **Foreground Service Verification** — Watchdog, resume handler, and pause handler all verify the Android foreground service is still alive and restart it if killed
+- **Stale Connection Recovery** — On app resume, detects if the WebSocket went stale (no data for 90s+) and forces a full reconnect instead of silently staying in "paired" state
+- **Live Notification Status** — Foreground notification text updates in real-time to reflect node state (connected, connecting, reconnecting, error)
+
+### Camera Fix
+
+- **Immediate Camera Release** — Camera hardware is now released immediately after each snap/clip using `try/finally`, preventing "Failed to submit capture request" errors on repeated use
+- **Auto-Exposure Settle** — Added 500ms settle time before snap for proper auto-exposure/focus
+- **Flash Conflict Prevention** — Flash capability releases the camera when torch is turned off, so subsequent snap/clip operations don't conflict
+- **Stale Controller Recovery** — Flash capability detects errored/stale controllers and recreates them instead of failing silently
+
+---
+
 ## v1.7.0 — Clean Modern UI Redesign
 
 > Requires Android 10+ (API 29)

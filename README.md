@@ -1,6 +1,6 @@
 # OpenClaw
 
-[![Download APK](https://img.shields.io/badge/Download-APK-green?style=for-the-badge&logo=android)](https://github.com/mithun50/openclaw-termux/releases/download/v1.6.1/OpenClaw-v1.6.1-universal.apk)
+[![Download APK](https://img.shields.io/badge/Download-APK-green?style=for-the-badge&logo=android)](https://github.com/mithun50/openclaw-termux/releases/latest)
 [![Build Flutter APK & AAB](https://github.com/mithun50/openclaw-termux/actions/workflows/flutter-build.yml/badge.svg)](https://github.com/mithun50/openclaw-termux/actions/workflows/flutter-build.yml)
 [![npm version](https://img.shields.io/npm/v/openclaw-termux?color=blue&label=npm)](https://www.npmjs.com/package/openclaw-termux)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -259,6 +259,7 @@ flutter_app/lib/
 │       └── vibration_capability.dart # Haptic feedback
 └── widgets/
     ├── gateway_controls.dart  # Start/stop, URL display, copy button
+    ├── node_controls.dart     # Node enable/disable, status badge
     ├── terminal_toolbar.dart  # Extra keys (Tab, Ctrl, Esc, arrows)
     ├── status_card.dart       # Reusable status card
     └── progress_step.dart     # Setup wizard step indicator
