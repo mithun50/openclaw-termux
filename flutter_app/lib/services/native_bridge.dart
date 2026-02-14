@@ -98,6 +98,10 @@ class NativeBridge {
     return await _channel.invokeMethod('isNodeServiceRunning');
   }
 
+  static Future<bool> updateNodeNotification(String text) async {
+    return await _channel.invokeMethod('updateNodeNotification', {'text': text});
+  }
+
   static Future<bool> requestBatteryOptimization() async {
     return await _channel.invokeMethod('requestBatteryOptimization');
   }

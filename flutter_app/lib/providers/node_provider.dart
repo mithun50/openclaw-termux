@@ -38,20 +38,87 @@ class NodeProvider extends ChangeNotifier with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _subscription = _nodeService.stateStream.listen((state) {
       _state = state;
+      _updateServiceNotification(state);
       notifyListeners();
     });
     _registerCapabilities();
     _init();
   }
 
+  /// Keep the foreground notification text in sync with the node status.
+  void _updateServiceNotification(NodeState state) {
+    if (state.isDisabled) return;
+    String text;
+    switch (state.status) {
+      case NodeStatus.paired:
+        text = 'Node connected';
+        break;
+      case NodeStatus.connecting:
+      case NodeStatus.challenging:
+      case NodeStatus.pairing:
+        text = 'Node connecting...';
+        break;
+      case NodeStatus.disconnected:
+        text = 'Node reconnecting...';
+        break;
+      case NodeStatus.error:
+        text = 'Node error — retrying';
+        break;
+      default:
+        return;
+    }
+    try {
+      NativeBridge.updateNodeNotification(text);
+    } catch (_) {}
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState lifecycleState) {
     if (lifecycleState == AppLifecycleState.resumed) {
-      // App came back to foreground — reconnect if the connection dropped
-      if (!_state.isPaired && !_state.isDisabled && !_state.isConnecting) {
-        _checkAutoConnect();
-      }
+      _onAppResumed();
+    } else if (lifecycleState == AppLifecycleState.paused) {
+      _onAppPaused();
     }
+  }
+
+  /// App returned to foreground — force connection health check.
+  /// Dart timers freeze while backgrounded, so the watchdog and ping
+  /// timers won't have fired.  We must check and reconnect manually.
+  Future<void> _onAppResumed() async {
+    if (_state.isDisabled) return;
+
+    // Ensure the foreground service is still alive
+    try {
+      final running = await NativeBridge.isNodeServiceRunning();
+      if (!running) {
+        await NativeBridge.startNodeService();
+      }
+    } catch (_) {}
+
+    if (_state.isPaired && _nodeService.isConnectionStale) {
+      // WebSocket went stale while in background — force reconnect
+      await _nodeService.disconnect();
+      await _nodeService.connect();
+    } else if (!_state.isPaired && !_state.isConnecting) {
+      // Connection dropped while in background
+      await _nodeService.connect();
+    }
+
+    // Restart watchdog (may have been frozen)
+    _startWatchdog();
+  }
+
+  /// App going to background — ensure the foreground service is running
+  /// so Android keeps our process alive.
+  Future<void> _onAppPaused() async {
+    if (_state.isDisabled) return;
+
+    try {
+      final running = await NativeBridge.isNodeServiceRunning();
+      if (!running) {
+        await NativeBridge.startNodeService();
+      }
+    } catch (_) {}
   }
 
   void _registerCapabilities() {
@@ -126,6 +193,13 @@ class NodeProvider extends ChangeNotifier with WidgetsBindingObserver {
     await prefs.init();
     if (prefs.nodeEnabled) {
       await _requestNodePermissions();
+      // Ensure foreground service is running before connecting
+      try {
+        final running = await NativeBridge.isNodeServiceRunning();
+        if (!running) {
+          await NativeBridge.startNodeService();
+        }
+      } catch (_) {}
       await _nodeService.connect();
       _startWatchdog();
     }
@@ -158,8 +232,16 @@ class NodeProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 2. Node appears paired but WebSocket is stale (no data for 90s+)
   void _startWatchdog() {
     _watchdog?.cancel();
-    _watchdog = Timer.periodic(const Duration(seconds: 45), (_) {
+    _watchdog = Timer.periodic(const Duration(seconds: 45), (_) async {
       if (_state.isDisabled) return;
+
+      // Also verify foreground service is still alive
+      try {
+        final running = await NativeBridge.isNodeServiceRunning();
+        if (!running && !_state.isDisabled) {
+          await NativeBridge.startNodeService();
+        }
+      } catch (_) {}
 
       if (!_state.isPaired && !_state.isConnecting) {
         // Connection dropped — reconnect

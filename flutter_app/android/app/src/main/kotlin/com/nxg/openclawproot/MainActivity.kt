@@ -156,6 +156,11 @@ class MainActivity : FlutterActivity() {
                 "isNodeServiceRunning" -> {
                     result.success(NodeForegroundService.isRunning)
                 }
+                "updateNodeNotification" -> {
+                    val text = call.argument<String>("text") ?: "Node connected"
+                    NodeForegroundService.updateStatus(text)
+                    result.success(true)
+                }
                 "requestBatteryOptimization" -> {
                     try {
                         val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {

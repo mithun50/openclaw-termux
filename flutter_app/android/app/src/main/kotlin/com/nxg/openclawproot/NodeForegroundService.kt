@@ -17,6 +17,7 @@ class NodeForegroundService : Service() {
         const val NOTIFICATION_ID = 3
         var isRunning = false
             private set
+        private var instance: NodeForegroundService? = null
 
         fun start(context: Context) {
             val intent = Intent(context, NodeForegroundService::class.java)
@@ -30,6 +31,10 @@ class NodeForegroundService : Service() {
         fun stop(context: Context) {
             val intent = Intent(context, NodeForegroundService::class.java)
             context.stopService(intent)
+        }
+
+        fun updateStatus(text: String) {
+            instance?.updateNotification(text)
         }
     }
 
@@ -45,6 +50,7 @@ class NodeForegroundService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         isRunning = true
+        instance = this
         startTime = System.currentTimeMillis()
         startForeground(NOTIFICATION_ID, buildNotification("Node connected"))
         acquireWakeLock()
@@ -53,8 +59,16 @@ class NodeForegroundService : Service() {
 
     override fun onDestroy() {
         isRunning = false
+        instance = null
         releaseWakeLock()
         super.onDestroy()
+    }
+
+    private fun updateNotification(text: String) {
+        try {
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.notify(NOTIFICATION_ID, buildNotification(text))
+        } catch (_: Exception) {}
     }
 
     private fun acquireWakeLock() {
