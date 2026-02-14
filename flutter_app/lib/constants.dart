@@ -1,6 +1,6 @@
 class AppConstants {
   static const String appName = 'OpenClaw';
-  static const String version = '1.7.0';
+  static const String version = '1.7.1';
   static const String packageName = 'com.nxg.openclawproot';
 
   /// Matches ANSI escape sequences (e.g. color codes in terminal output).
