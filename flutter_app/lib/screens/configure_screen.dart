@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:xterm/xterm.dart';
@@ -24,6 +25,8 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
   bool _loading = true;
   bool _finished = false;
   String? _error;
+  final _ctrlNotifier = ValueNotifier<bool>(false);
+  final _altNotifier = ValueNotifier<bool>(false);
   static final _anyUrlRegex = RegExp(r'https?://[^\s<>\[\]"' "'" r'\)]+');
   static final _boxDrawing = RegExp(r'[│┤├┬┴┼╮╯╰╭─╌╴╶┌┐└┘◇◆]+');
 
@@ -91,6 +94,19 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
       });
 
       _terminal.onOutput = (data) {
+        if (_ctrlNotifier.value && data.length == 1) {
+          final code = data.toLowerCase().codeUnitAt(0);
+          if (code >= 97 && code <= 122) {
+            _pty?.write(Uint8List.fromList([code - 96]));
+            _ctrlNotifier.value = false;
+            return;
+          }
+        }
+        if (_altNotifier.value && data.isNotEmpty) {
+          _pty?.write(utf8.encode('\x1b$data'));
+          _altNotifier.value = false;
+          return;
+        }
         _pty?.write(utf8.encode(data));
       };
 
@@ -109,6 +125,8 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
 
   @override
   void dispose() {
+    _ctrlNotifier.dispose();
+    _altNotifier.dispose();
     _controller.dispose();
     _pty?.kill();
     NativeBridge.stopTerminalService();
@@ -302,7 +320,11 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
                 ),
               ),
             ),
-            TerminalToolbar(pty: _pty),
+            TerminalToolbar(
+              pty: _pty,
+              ctrlNotifier: _ctrlNotifier,
+              altNotifier: _altNotifier,
+            ),
           ],
           if (_finished)
             Padding(
