@@ -31,6 +31,8 @@ class _PackageInstallScreenState extends State<PackageInstallScreen> {
   bool _loading = true;
   bool _finished = false;
   String? _error;
+  final _ctrlNotifier = ValueNotifier<bool>(false);
+  final _altNotifier = ValueNotifier<bool>(false);
 
   static const _fontFallback = [
     'monospace',
@@ -103,6 +105,19 @@ class _PackageInstallScreenState extends State<PackageInstallScreen> {
       });
 
       _terminal.onOutput = (data) {
+        if (_ctrlNotifier.value && data.length == 1) {
+          final code = data.toLowerCase().codeUnitAt(0);
+          if (code >= 97 && code <= 122) {
+            _pty?.write(Uint8List.fromList([code - 96]));
+            _ctrlNotifier.value = false;
+            return;
+          }
+        }
+        if (_altNotifier.value && data.isNotEmpty) {
+          _pty?.write(utf8.encode('\x1b$data'));
+          _altNotifier.value = false;
+          return;
+        }
         _pty?.write(utf8.encode(data));
       };
 
@@ -128,6 +143,8 @@ class _PackageInstallScreenState extends State<PackageInstallScreen> {
 
   @override
   void dispose() {
+    _ctrlNotifier.dispose();
+    _altNotifier.dispose();
     _controller.dispose();
     _pty?.kill();
     NativeBridge.stopTerminalService();
@@ -217,7 +234,11 @@ class _PackageInstallScreenState extends State<PackageInstallScreen> {
                 ),
               ),
             ),
-            TerminalToolbar(pty: _pty),
+            TerminalToolbar(
+              pty: _pty,
+              ctrlNotifier: _ctrlNotifier,
+              altNotifier: _altNotifier,
+            ),
           ],
           if (_finished)
             Padding(
