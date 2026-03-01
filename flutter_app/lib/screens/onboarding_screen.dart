@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:xterm/xterm.dart';
@@ -74,6 +75,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Future<void> _startOnboarding() async {
     try {
+      // Ensure dirs + resolv.conf exist before proot starts (#40).
+      try { await NativeBridge.setupDirs(); } catch (_) {}
+      try { await NativeBridge.writeResolv(); } catch (_) {}
+      try {
+        final filesDir = await NativeBridge.getFilesDir();
+        final resolvFile = File('$filesDir/config/resolv.conf');
+        if (!resolvFile.existsSync()) {
+          Directory('$filesDir/config').createSync(recursive: true);
+          resolvFile.writeAsStringSync('nameserver 8.8.8.8\nnameserver 8.8.4.4\n');
+        }
+      } catch (_) {}
       final config = await TerminalService.getProotShellConfig();
       final args = TerminalService.buildProotArgs(
         config,

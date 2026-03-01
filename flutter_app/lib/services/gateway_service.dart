@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../constants.dart';
 import '../models/gateway_state.dart';
@@ -43,6 +44,15 @@ class GatewayService {
     // Android may clear the files directory during an app update (#40).
     try { await NativeBridge.setupDirs(); } catch (_) {}
     try { await NativeBridge.writeResolv(); } catch (_) {}
+    // Dart dart:io fallback if native calls failed (#40).
+    try {
+      final filesDir = await NativeBridge.getFilesDir();
+      final resolvFile = File('$filesDir/config/resolv.conf');
+      if (!resolvFile.existsSync()) {
+        Directory('$filesDir/config').createSync(recursive: true);
+        resolvFile.writeAsStringSync('nameserver 8.8.8.8\nnameserver 8.8.4.4\n');
+      }
+    } catch (_) {}
 
     final alreadyRunning = await NativeBridge.isGatewayRunning();
     if (alreadyRunning) {
@@ -143,6 +153,15 @@ fs.writeFileSync(p, JSON.stringify(c, null, 2));
       // Non-fatal: the GatewayService foreground service also creates them.
       try { await NativeBridge.setupDirs(); } catch (_) {}
       try { await NativeBridge.writeResolv(); } catch (_) {}
+      // Dart dart:io fallback if native calls failed (#40).
+      try {
+        final filesDir = await NativeBridge.getFilesDir();
+        final resolvFile = File('$filesDir/config/resolv.conf');
+        if (!resolvFile.existsSync()) {
+          Directory('$filesDir/config').createSync(recursive: true);
+          resolvFile.writeAsStringSync('nameserver 8.8.8.8\nnameserver 8.8.4.4\n');
+        }
+      } catch (_) {}
       await _writeNodeAllowConfig();
       await NativeBridge.startGateway();
       _subscribeLogs();
