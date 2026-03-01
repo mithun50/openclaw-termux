@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import '../constants.dart';
 import '../models/setup_state.dart';
@@ -57,13 +58,23 @@ class BootstrapService {
         message: 'Setting up directories...',
       ));
       _updateSetupNotification('Setting up directories...', progress: 2);
-      await NativeBridge.setupDirs();
-      await NativeBridge.writeResolv();
+      try { await NativeBridge.setupDirs(); } catch (_) {}
+      try { await NativeBridge.writeResolv(); } catch (_) {}
 
       // Step 1: Download rootfs
       final arch = await NativeBridge.getArch();
       final rootfsUrl = AppConstants.getRootfsUrl(arch);
       final filesDir = await NativeBridge.getFilesDir();
+
+      // Direct Dart fallback: ensure config dir + resolv.conf exist (#40).
+      try {
+        final configDir = '$filesDir/config';
+        final resolvFile = File('$configDir/resolv.conf');
+        if (!resolvFile.existsSync()) {
+          Directory(configDir).createSync(recursive: true);
+          resolvFile.writeAsStringSync('nameserver 8.8.8.8\nnameserver 8.8.4.4\n');
+        }
+      } catch (_) {}
       final tarPath = '$filesDir/tmp/ubuntu-rootfs.tar.gz';
 
       _updateSetupNotification('Downloading Ubuntu rootfs...', progress: 5);
