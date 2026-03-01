@@ -105,8 +105,8 @@ class SshForegroundService : Service() {
 
                 // Ensure directories exist
                 val bootstrapManager = BootstrapManager(applicationContext, filesDir, nativeLibDir)
-                bootstrapManager.setupDirectories()
-                bootstrapManager.writeResolvConf()
+                try { bootstrapManager.setupDirectories() } catch (_: Exception) {}
+                try { bootstrapManager.writeResolvConf() } catch (_: Exception) {}
 
                 // Generate host keys if missing, configure sshd, then run in
                 // foreground mode (-D) so the proot process stays alive.

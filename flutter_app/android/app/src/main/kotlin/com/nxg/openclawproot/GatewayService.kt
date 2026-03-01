@@ -84,8 +84,16 @@ class GatewayService : Service() {
                 // in case Android cleared them after an app update (#40).
                 // This must run before proot — it needs bind-mount targets.
                 val bootstrapManager = BootstrapManager(applicationContext, filesDir, nativeLibDir)
-                bootstrapManager.setupDirectories()
-                bootstrapManager.writeResolvConf()
+                try {
+                    bootstrapManager.setupDirectories()
+                } catch (e: Exception) {
+                    emitLog("[WARN] setupDirectories failed: ${e.message}")
+                }
+                try {
+                    bootstrapManager.writeResolvConf()
+                } catch (e: Exception) {
+                    emitLog("[WARN] writeResolvConf failed: ${e.message}")
+                }
 
                 gatewayProcess = pm.startProotProcess("openclaw gateway --verbose")
                 updateNotificationRunning()
