@@ -56,12 +56,15 @@ OpenClaw brings the [OpenClaw](https://github.com/anthropics/openclaw) AI gatewa
 - **One-Tap Setup** — Downloads Ubuntu rootfs, Node.js 22, and OpenClaw automatically
 - **Built-in Terminal** — Full terminal emulator with extra keys toolbar, copy/paste, clickable URLs
 - **Gateway Controls** — Start/stop gateway with status indicator and health checks
+- **AI Providers** — Configure API keys and select models for 7 providers (Anthropic, OpenAI, Google Gemini, OpenRouter, NVIDIA NIM, DeepSeek, xAI)
+- **SSH Remote Access** — Start/stop SSH server, set root password, view connection info with copyable commands
+- **Configure Menu** — Run `openclaw configure` in a built-in terminal to manage gateway settings
 - **Node Device Capabilities** — 7 capabilities (15 commands) exposed to AI via WebSocket node protocol
 - **Token URL Display** — Captures auth token from onboarding, shows it with a copy button
 - **Web Dashboard** — Embedded WebView loads the dashboard with authentication token
 - **View Logs** — Real-time gateway log viewer with search/filter
 - **Onboarding** — Configure API keys and binding directly in-app
-- **Optional Packages** — Install Go (Golang) and Homebrew as optional dev tools from the setup wizard or dashboard
+- **Optional Packages** — Install Go (Golang), Homebrew, and OpenSSH as optional dev tools
 - **Settings** — Auto-start, battery optimization, system info, package status, re-run setup
 - **Foreground Service** — Keeps the gateway alive in the background with uptime tracking
 - **Setup Notifications** — Progress bar notifications during environment setup
@@ -74,6 +77,7 @@ After the initial setup completes, you can optionally install development tools 
 |---------|---------------|------|
 | **Go (Golang)** | `apt install golang` | ~150 MB |
 | **Homebrew** | Official installer (with root workaround) | ~500 MB |
+| **OpenSSH** | `apt install openssh-server` | ~10 MB |
 
 These are accessible from:
 - **Setup Wizard** — Package cards appear after setup completes
@@ -222,7 +226,8 @@ flutter_app/lib/
 │   ├── node_state.dart        # Node connection status
 │   ├── node_frame.dart        # WebSocket frame model (req/res/event)
 │   ├── setup_state.dart       # Setup wizard progress
-│   └── optional_package.dart  # Optional package metadata (Go, Homebrew)
+│   ├── optional_package.dart  # Optional package metadata (Go, Homebrew)
+│   └── ai_provider.dart       # AI provider data model (7 providers)
 ├── providers/
 │   ├── gateway_provider.dart  # Gateway state management
 │   ├── node_provider.dart     # Node capabilities + permission management
@@ -233,7 +238,11 @@ flutter_app/lib/
 │   ├── onboarding_screen.dart      # API key configuration terminal
 │   ├── dashboard_screen.dart       # Main dashboard with quick actions
 │   ├── terminal_screen.dart        # Full terminal emulator
+│   ├── configure_screen.dart       # openclaw configure terminal
 │   ├── web_dashboard_screen.dart   # WebView for OpenClaw dashboard
+│   ├── providers_screen.dart       # AI provider list
+│   ├── provider_detail_screen.dart # API key + model configuration
+│   ├── ssh_screen.dart             # SSH server management
 │   ├── packages_screen.dart        # Optional package manager
 │   ├── package_install_screen.dart # Terminal-based package installer
 │   ├── logs_screen.dart            # Gateway log viewer
@@ -248,6 +257,8 @@ flutter_app/lib/
 │   ├── bootstrap_service.dart # Environment setup orchestration
 │   ├── package_service.dart   # Optional package status checking
 │   ├── preferences_service.dart # Persistent settings (token URL, etc.)
+│   ├── provider_config_service.dart # AI provider config read/write
+│   ├── ssh_service.dart       # SSH server management via native bridge
 │   └── capabilities/
 │       ├── capability_handler.dart   # Base class with permission handling
 │       ├── camera_capability.dart    # Photo/video capture
