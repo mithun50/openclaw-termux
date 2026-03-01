@@ -85,8 +85,30 @@ class OptionalPackage {
     completionSentinel: 'BREW_INSTALL_COMPLETE',
   );
 
+  static const sshPackage = OptionalPackage(
+    id: 'ssh',
+    name: 'OpenSSH',
+    description: 'SSH client and server for secure remote access',
+    icon: Icons.vpn_key,
+    color: Colors.teal,
+    installCommand:
+        'set -e; '
+        'echo ">>> Installing OpenSSH..."; '
+        'apt-get update -qq && apt-get install -y openssh-client openssh-server; '
+        'ssh -V; '
+        'echo ">>> SSH_INSTALL_COMPLETE"',
+    uninstallCommand:
+        'set -e; '
+        'echo ">>> Removing OpenSSH..."; '
+        'apt-get remove -y openssh-client openssh-server && apt-get autoremove -y; '
+        'echo ">>> SSH_UNINSTALL_COMPLETE"',
+    checkPath: 'usr/bin/ssh',
+    estimatedSize: '~10 MB',
+    completionSentinel: 'SSH_INSTALL_COMPLETE',
+  );
+
   /// All available optional packages.
-  static const all = [goPackage, brewPackage];
+  static const all = [goPackage, brewPackage, sshPackage];
 
   /// Sentinel for uninstall completion (derived from install sentinel).
   String get uninstallSentinel =>

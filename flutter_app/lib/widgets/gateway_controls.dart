@@ -6,6 +6,7 @@ import '../constants.dart';
 import '../models/gateway_state.dart';
 import '../providers/gateway_provider.dart';
 import '../screens/logs_screen.dart';
+import '../screens/web_dashboard_screen.dart';
 
 class GatewayControls extends StatelessWidget {
   const GatewayControls({super.key});
@@ -42,11 +43,24 @@ class GatewayControls extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: SelectableText(
-                          state.dashboardUrl ?? AppConstants.gatewayUrl,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            fontFamily: 'monospace',
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => WebDashboardScreen(
+                                  url: state.dashboardUrl,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            state.dashboardUrl ?? AppConstants.gatewayUrl,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontFamily: 'monospace',
+                              decoration: TextDecoration.underline,
+                              decorationColor: theme.colorScheme.primary,
+                            ),
                           ),
                         ),
                       ),
@@ -60,6 +74,19 @@ class GatewayControls extends StatelessWidget {
                             const SnackBar(
                               content: Text('URL copied to clipboard'),
                               duration: Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.open_in_new, size: 18),
+                        tooltip: 'Open dashboard',
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => WebDashboardScreen(
+                                url: state.dashboardUrl,
+                              ),
                             ),
                           );
                         },

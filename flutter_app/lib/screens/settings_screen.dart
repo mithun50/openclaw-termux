@@ -30,6 +30,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _loading = true;
   bool _goInstalled = false;
   bool _brewInstalled = false;
+  bool _sshInstalled = false;
   bool _storageGranted = false;
 
   @override
@@ -57,6 +58,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final goInstalled = File('$rootfs/usr/bin/go').existsSync();
       final brewInstalled =
           File('$rootfs/home/linuxbrew/.linuxbrew/bin/brew').existsSync();
+      final sshInstalled = File('$rootfs/usr/bin/ssh').existsSync();
 
       setState(() {
         _batteryOptimized = batteryOptimized;
@@ -66,6 +68,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _status = status;
         _goInstalled = goInstalled;
         _brewInstalled = brewInstalled;
+        _sshInstalled = sshInstalled;
         _loading = false;
       });
     } catch (e) {
@@ -199,6 +202,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ? 'Installed'
                       : 'Not installed'),
                   leading: const Icon(Icons.science),
+                ),
+                ListTile(
+                  title: const Text('OpenSSH'),
+                  subtitle: Text(_sshInstalled
+                      ? 'Installed'
+                      : 'Not installed'),
+                  leading: const Icon(Icons.vpn_key),
                 ),
                 const Divider(),
                 _sectionHeader(theme, 'MAINTENANCE'),

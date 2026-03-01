@@ -24,17 +24,41 @@ class _TerminalToolbarState extends State<TerminalToolbar> {
     if (pty == null) return;
 
     if (_ctrlActive) {
-      // CTRL+key: send byte 1-26 for a-z
       _ctrlActive = false;
+
+      // Ctrl+a-z → bytes 1-26
       if (data.length == 1) {
         final code = data.toLowerCase().codeUnitAt(0);
         if (code >= 97 && code <= 122) {
-          // a-z -> 1-26
           pty.write(Uint8List.fromList([code - 96]));
           setState(() {});
           return;
         }
       }
+
+      // Ctrl+escape sequences (arrows, Home, End, PgUp, PgDn)
+      const ctrlSeqMap = <String, String>{
+        '\x1b[A': '\x1b[1;5A', // Up
+        '\x1b[B': '\x1b[1;5B', // Down
+        '\x1b[D': '\x1b[1;5D', // Left
+        '\x1b[C': '\x1b[1;5C', // Right
+        '\x1b[H': '\x1b[1;5H', // Home
+        '\x1b[F': '\x1b[1;5F', // End
+        '\x1b[5~': '\x1b[5;5~', // PgUp
+        '\x1b[6~': '\x1b[6;5~', // PgDn
+      };
+
+      final ctrlVariant = ctrlSeqMap[data];
+      if (ctrlVariant != null) {
+        pty.write(utf8.encode(ctrlVariant));
+        setState(() {});
+        return;
+      }
+
+      // Unhandled combo: send raw data (TAB, ESC, symbols, etc.)
+      pty.write(utf8.encode(data));
+      setState(() {});
+      return;
     }
 
     if (_altActive) {
