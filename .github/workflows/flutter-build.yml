@@ -17,6 +17,10 @@ on:
       - '.github/workflows/flutter-build.yml'
   workflow_dispatch:
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   build:
     name: Build APK & AAB
@@ -144,6 +148,16 @@ jobs:
             cp "$AAB" "artifacts/OpenClaw-v${VERSION}.aab"
           fi
 
+          # Summary
+          echo "### Build Artifacts" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| File | Size |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|------|------|" >> "$GITHUB_STEP_SUMMARY"
+          for f in artifacts/*; do
+            SIZE=$(du -h "$f" | cut -f1)
+            echo "| \`$(basename $f)\` | $SIZE |" >> "$GITHUB_STEP_SUMMARY"
+          done
+
           echo "Built artifacts:"
           ls -lh artifacts/
 
@@ -160,6 +174,81 @@ jobs:
           name: openclaw-aab
           path: artifacts/*.aab
           retention-days: 30
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const version = '${{ steps.apks.outputs.version }}';
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+
+            const body = [
+              `## Build Successful`,
+              ``,
+              `**Version:** \`v${version}\``,
+              ``,
+              `### Download APKs`,
+              ``,
+              `| Architecture | Download |`,
+              `|---|---|`,
+              `| arm64-v8a (recommended) | [OpenClaw-v${version}-arm64-v8a.apk](${runUrl}#artifacts) |`,
+              `| armeabi-v7a (32-bit) | [OpenClaw-v${version}-armeabi-v7a.apk](${runUrl}#artifacts) |`,
+              `| x86_64 (emulator) | [OpenClaw-v${version}-x86_64.apk](${runUrl}#artifacts) |`,
+              `| Universal (all ABIs) | [OpenClaw-v${version}-universal.apk](${runUrl}#artifacts) |`,
+              `| App Bundle (Play Store) | [OpenClaw-v${version}.aab](${runUrl}#artifacts) |`,
+              ``,
+              `> Download from [**Actions Artifacts**](${runUrl}#artifacts)`,
+              ``,
+              `---`,
+              `*Built from ${process.env.GITHUB_SHA.substring(0, 7)} by [GitHub Actions](${runUrl})*`,
+            ].join('\n');
+
+            // Find existing bot comment to update instead of spamming
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('## Build Successful')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Comment build failure on PR
+        if: github.event_name == 'pull_request' && failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: [
+                `## Build Failed`,
+                ``,
+                `The build failed for commit ${process.env.GITHUB_SHA.substring(0, 7)}.`,
+                ``,
+                `[View build logs](${runUrl})`,
+              ].join('\n'),
+            });
 
   release:
     name: Create GitHub Release
