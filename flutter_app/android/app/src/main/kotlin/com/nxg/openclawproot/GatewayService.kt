@@ -122,12 +122,6 @@ class GatewayService : Service() {
                     }
                 } catch (_: Exception) {}
 
-                // Kill any stale openclaw gateway processes from a previous
-                // app/service lifecycle to prevent duplicate instances (#60).
-                try {
-                    pm.runInProotSync("pkill -f 'openclaw gateway' 2>/dev/null; sleep 0.5", 10)
-                } catch (_: Exception) {}
-
                 gatewayProcess = pm.startProotProcess("openclaw gateway --verbose")
                 updateNotificationRunning()
                 emitLog("Gateway started")
