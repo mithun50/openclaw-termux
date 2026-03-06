@@ -176,6 +176,7 @@ class _TerminalToolbarState extends State<TerminalToolbar> {
               keyButton('CTRL', onTap: _toggleCtrl, active: _ctrlActive),
               keyButton('ALT', onTap: _toggleAlt, active: _altActive),
               keyButton('TAB', sendData: '\t'),
+              keyButton('ENTER', sendData: '\r'),
               const SizedBox(width: 4),
               arrowButton(Icons.arrow_upward, '\x1b[A'),
               arrowButton(Icons.arrow_downward, '\x1b[B'),

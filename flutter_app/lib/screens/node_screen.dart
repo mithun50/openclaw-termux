@@ -216,6 +216,12 @@ class _NodeScreenState extends State<NodeScreen> {
                       'Read accelerometer, gyroscope, magnetometer, barometer',
                       Icons.sensors,
                     ),
+                    _capabilityTile(
+                      theme,
+                      'Serial',
+                      'Bluetooth and USB serial communication',
+                      Icons.usb,
+                    ),
                     const SizedBox(height: 16),
 
                     // Device Info

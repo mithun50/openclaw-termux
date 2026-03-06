@@ -180,6 +180,10 @@ class NativeBridge {
     return List<String>.from(result);
   }
 
+  static Future<bool> bringToForeground() async {
+    return await _channel.invokeMethod('bringToForeground');
+  }
+
   static Future<bool> setRootPassword(String password) async {
     return await _channel.invokeMethod('setRootPassword', {'password': password});
   }

@@ -10,6 +10,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
+import android.net.ConnectivityManager
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
@@ -114,52 +115,71 @@ class SshForegroundService : Service() {
                 try { bootstrapManager.setupDirectories() } catch (_: Exception) {}
                 try { bootstrapManager.writeResolvConf() } catch (_: Exception) {}
 
-                // Last-resort: verify resolv.conf exists, create inline if not
-                val resolvContent = "nameserver 8.8.8.8\nnameserver 8.8.4.4\n"
+                // Last-resort: verify resolv.conf exists, create inline if not.
+                // Use system DNS servers when available (#60).
+                val resolvContent = getSystemDnsContent()
                 try {
                     val resolvFile = File(filesDir, "config/resolv.conf")
-                    if (!resolvFile.exists() || resolvFile.length() == 0L) {
-                        resolvFile.parentFile?.mkdirs()
-                        resolvFile.writeText(resolvContent)
-                    }
+                    resolvFile.parentFile?.mkdirs()
+                    resolvFile.writeText(resolvContent)
                 } catch (_: Exception) {}
                 // Also write into rootfs /etc/ so DNS works even if bind-mount fails
                 try {
                     val rootfsResolv = File(filesDir, "rootfs/ubuntu/etc/resolv.conf")
-                    if (!rootfsResolv.exists() || rootfsResolv.length() == 0L) {
-                        rootfsResolv.parentFile?.mkdirs()
-                        rootfsResolv.writeText(resolvContent)
-                    }
+                    rootfsResolv.parentFile?.mkdirs()
+                    rootfsResolv.writeText(resolvContent)
                 } catch (_: Exception) {}
 
                 // Generate host keys if missing, configure sshd, then run in
                 // foreground mode (-D) so the proot process stays alive.
                 // -e logs to stderr instead of syslog (easier debugging).
                 // PermitRootLogin yes is needed since proot fakes root.
+                // ListenAddress 0.0.0.0 ensures sshd binds to all IPv4
+                // interfaces and survives VPN network changes (#61).
                 val cmd = "mkdir -p /run/sshd /etc/ssh && " +
                     "test -f /etc/ssh/ssh_host_rsa_key || ssh-keygen -A && " +
                     "sed -i 's/^#\\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config 2>/dev/null; " +
                     "grep -q '^PermitRootLogin' /etc/ssh/sshd_config || echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config; " +
+                    "sed -i 's/^#\\?ListenAddress.*/ListenAddress 0.0.0.0/' /etc/ssh/sshd_config 2>/dev/null; " +
+                    "grep -q '^ListenAddress' /etc/ssh/sshd_config || echo 'ListenAddress 0.0.0.0' >> /etc/ssh/sshd_config; " +
                     "/usr/sbin/sshd -D -e -p $port"
 
-                sshdProcess = pm.startProotProcess(cmd)
-                updateNotification("SSH running on port $port")
+                var restartCount = 0
+                val maxRestarts = 3
 
-                // Read stderr for logs
-                val stderrReader = BufferedReader(InputStreamReader(sshdProcess!!.errorStream))
-                Thread {
-                    try {
-                        var line: String?
-                        while (stderrReader.readLine().also { line = it } != null) {
-                            // Could log these if needed
-                        }
-                    } catch (_: Exception) {}
-                }.start()
+                while (restartCount <= maxRestarts) {
+                    sshdProcess = pm.startProotProcess(cmd)
+                    if (restartCount == 0) {
+                        updateNotification("SSH running on port $port")
+                    } else {
+                        updateNotification("SSH restarted on port $port (attempt ${restartCount + 1})")
+                    }
 
-                val exitCode = sshdProcess!!.waitFor()
-                isRunning = false
-                updateNotification("SSH stopped (exit $exitCode)")
-                stopSelf()
+                    // Read stderr for logs
+                    val stderrReader = BufferedReader(InputStreamReader(sshdProcess!!.errorStream))
+                    Thread {
+                        try {
+                            var line: String?
+                            while (stderrReader.readLine().also { line = it } != null) {
+                                android.util.Log.w("SSHD", line ?: "")
+                            }
+                        } catch (_: Exception) {}
+                    }.start()
+
+                    val exitCode = sshdProcess!!.waitFor()
+
+                    if (!isRunning) break // Intentional stop
+
+                    restartCount++
+                    if (restartCount <= maxRestarts) {
+                        updateNotification("SSH exited ($exitCode), restarting...")
+                        Thread.sleep(2000L * restartCount)
+                    } else {
+                        isRunning = false
+                        updateNotification("SSH stopped (exit $exitCode)")
+                        stopSelf()
+                    }
+                }
             } catch (e: Exception) {
                 isRunning = false
                 updateNotification("SSH error: ${e.message?.take(50)}")
@@ -173,6 +193,24 @@ class SshForegroundService : Service() {
             it.destroyForcibly()
             sshdProcess = null
         }
+    }
+
+    private fun getSystemDnsContent(): String {
+        try {
+            val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+            if (cm != null) {
+                val network = cm.activeNetwork
+                if (network != null) {
+                    val linkProps = cm.getLinkProperties(network)
+                    val dnsServers = linkProps?.dnsServers
+                    if (dnsServers != null && dnsServers.isNotEmpty()) {
+                        val lines = dnsServers.joinToString("\n") { "nameserver ${it.hostAddress}" }
+                        return "$lines\nnameserver 8.8.8.8\n"
+                    }
+                }
+            }
+        } catch (_: Exception) {}
+        return "nameserver 8.8.8.8\nnameserver 8.8.4.4\n"
     }
 
     private fun acquireWakeLock() {

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -72,6 +73,39 @@ class _SplashScreenState extends State<SplashScreen>
 
       final prefs = PreferencesService();
       await prefs.init();
+
+      // Auto-export snapshot when app version changes (#55)
+      try {
+        final oldVersion = prefs.lastAppVersion;
+        if (oldVersion != null && oldVersion != AppConstants.version) {
+          final hasPermission = await NativeBridge.hasStoragePermission();
+          if (hasPermission) {
+            final sdcard = await NativeBridge.getExternalStoragePath();
+            final downloadDir = Directory('$sdcard/Download');
+            if (!await downloadDir.exists()) {
+              await downloadDir.create(recursive: true);
+            }
+            final snapshotPath = '$sdcard/Download/openclaw-snapshot-$oldVersion.json';
+            final openclawJson = await NativeBridge.readRootfsFile('root/.openclaw/openclaw.json');
+            final snapshot = {
+              'version': oldVersion,
+              'timestamp': DateTime.now().toIso8601String(),
+              'openclawConfig': openclawJson,
+              'dashboardUrl': prefs.dashboardUrl,
+              'autoStart': prefs.autoStartGateway,
+              'nodeEnabled': prefs.nodeEnabled,
+              'nodeDeviceToken': prefs.nodeDeviceToken,
+              'nodeGatewayHost': prefs.nodeGatewayHost,
+              'nodeGatewayPort': prefs.nodeGatewayPort,
+              'nodeGatewayToken': prefs.nodeGatewayToken,
+            };
+            await File(snapshotPath).writeAsString(
+              const JsonEncoder.withIndent('  ').convert(snapshot),
+            );
+          }
+        }
+        prefs.lastAppVersion = AppConstants.version;
+      } catch (_) {}
 
       bool setupComplete;
       try {

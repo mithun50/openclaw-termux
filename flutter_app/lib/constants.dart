@@ -1,6 +1,6 @@
 class AppConstants {
   static const String appName = 'OpenClaw';
-  static const String version = '1.8.2';
+  static const String version = '1.8.4';
   static const String packageName = 'com.nxg.openclawproot';
 
   /// Matches ANSI escape sequences (e.g. color codes in terminal output).
@@ -10,6 +10,9 @@ class AppConstants {
   static const String authorEmail = 'mithungowda.b7411@gmail.com';
   static const String githubUrl = 'https://github.com/mithun50/openclaw-termux';
   static const String license = 'MIT';
+
+  static const String githubApiLatestRelease =
+      'https://api.github.com/repos/mithun50/openclaw-termux/releases/latest';
 
   // NextGenX
   static const String orgName = 'NextGenX';

@@ -9,6 +9,7 @@ import '../constants.dart';
 import '../providers/node_provider.dart';
 import '../services/native_bridge.dart';
 import '../services/preferences_service.dart';
+import '../services/update_service.dart';
 import 'node_screen.dart';
 import 'setup_wizard_screen.dart';
 
@@ -32,6 +33,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _brewInstalled = false;
   bool _sshInstalled = false;
   bool _storageGranted = false;
+  bool _checkingUpdate = false;
 
   @override
   void initState() {
@@ -247,6 +249,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   leading: Icon(Icons.info_outline),
                   isThreeLine: true,
                 ),
+                ListTile(
+                  title: const Text('Check for Updates'),
+                  subtitle: const Text('Check GitHub for a newer release'),
+                  leading: _checkingUpdate
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.system_update),
+                  onTap: _checkingUpdate ? null : _checkForUpdates,
+                ),
                 const ListTile(
                   title: Text('Developer'),
                   subtitle: Text(AppConstants.authorName),
@@ -347,6 +361,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         'dashboardUrl': _prefs.dashboardUrl,
         'autoStart': _prefs.autoStartGateway,
         'nodeEnabled': _prefs.nodeEnabled,
+        'nodeDeviceToken': _prefs.nodeDeviceToken,
+        'nodeGatewayHost': _prefs.nodeGatewayHost,
+        'nodeGatewayPort': _prefs.nodeGatewayPort,
+        'nodeGatewayToken': _prefs.nodeGatewayToken,
       };
 
       final path = await _getSnapshotPath();
@@ -397,6 +415,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (snapshot['nodeEnabled'] != null) {
         _prefs.nodeEnabled = snapshot['nodeEnabled'] as bool;
       }
+      if (snapshot['nodeDeviceToken'] != null) {
+        _prefs.nodeDeviceToken = snapshot['nodeDeviceToken'] as String;
+      }
+      if (snapshot['nodeGatewayHost'] != null) {
+        _prefs.nodeGatewayHost = snapshot['nodeGatewayHost'] as String;
+      }
+      if (snapshot['nodeGatewayPort'] != null) {
+        _prefs.nodeGatewayPort = snapshot['nodeGatewayPort'] as int;
+      }
+      if (snapshot['nodeGatewayToken'] != null) {
+        _prefs.nodeGatewayToken = snapshot['nodeGatewayToken'] as String;
+      }
 
       // Refresh UI
       await _loadSettings();
@@ -410,6 +440,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Import failed: $e')),
       );
+    }
+  }
+
+  Future<void> _checkForUpdates() async {
+    setState(() => _checkingUpdate = true);
+    try {
+      final result = await UpdateService.check();
+      if (!mounted) return;
+      if (result.available) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Update Available'),
+            content: Text(
+              'A new version is available.\n\n'
+              'Current: ${AppConstants.version}\n'
+              'Latest: ${result.latest}',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Later'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  launchUrl(
+                    Uri.parse(result.url),
+                    mode: LaunchMode.externalApplication,
+                  );
+                },
+                child: const Text('Download'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("You're on the latest version")),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not check for updates')),
+      );
+    } finally {
+      if (mounted) setState(() => _checkingUpdate = false);
     }
   }
 

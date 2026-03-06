@@ -11,6 +11,7 @@ class PreferencesService {
   static const _keyNodeGatewayPort = 'node_gateway_port';
   static const _keyNodePublicKey = 'node_ed25519_public';
   static const _keyNodeGatewayToken = 'node_gateway_token';
+  static const _keyLastAppVersion = 'last_app_version';
 
   late SharedPreferences _prefs;
 
@@ -65,6 +66,15 @@ class PreferencesService {
       _prefs.setString(_keyNodeGatewayToken, value);
     } else {
       _prefs.remove(_keyNodeGatewayToken);
+    }
+  }
+
+  String? get lastAppVersion => _prefs.getString(_keyLastAppVersion);
+  set lastAppVersion(String? value) {
+    if (value != null) {
+      _prefs.setString(_keyLastAppVersion, value);
+    } else {
+      _prefs.remove(_keyLastAppVersion);
     }
   }
 

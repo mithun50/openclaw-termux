@@ -64,6 +64,7 @@ class ProviderConfigService {
     final providerJson = jsonEncode({
       'apiKey': apiKey,
       'baseUrl': provider.baseUrl,
+      'models': [model],
     });
     final modelJson = jsonEncode(model);
     final providerIdJson = jsonEncode(provider.id);
@@ -122,6 +123,7 @@ fs.writeFileSync(p, JSON.stringify(c, null, 2));
     ((config['models'] as Map<String, dynamic>)['providers'] as Map<String, dynamic>)[providerId] = {
       'apiKey': apiKey,
       'baseUrl': baseUrl,
+      'models': [model],
     };
 
     // Set active model

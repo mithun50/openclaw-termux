@@ -18,6 +18,11 @@ class NodeService {
   final Map<String, Future<NodeFrame> Function(String, Map<String, dynamic>)>
       _capabilityHandlers = {};
   String? _gatewayAuthToken;
+  bool _isAppInForeground = true;
+
+  void setAppInForeground(bool value) {
+    _isAppInForeground = value;
+  }
 
   Stream<NodeState> get stateStream => _stateController.stream;
   NodeState get state => _state;
@@ -258,11 +263,16 @@ class NodeService {
     ));
     _log('[NODE] Paired and connected');
 
-    // Send capabilities advertisement
+    // Send capabilities advertisement — include both 'capabilities' (legacy)
+    // and 'commands' (matching the connect frame format) so the gateway can
+    // discover node commands regardless of which field it checks (#56).
     final capabilities = _capabilityHandlers.keys.toList();
+    final caps = capabilities.map((c) => c.split('.').first).toSet().toList();
     _ws.send(NodeFrame.event('node.capabilities', {
       'deviceId': _identity.deviceId,
       'capabilities': capabilities,
+      'commands': capabilities,
+      'caps': caps,
     }));
   }
 
@@ -358,6 +368,29 @@ class NodeService {
         commandParams = Map<String, dynamic>.from(
             jsonDecode(paramsJSON) as Map);
       } catch (_) {}
+    }
+
+    // Commands that require Activity in foreground (camera, screen, sensor, flash, location)
+    const foregroundCommands = ['camera', 'screen', 'sensor', 'flash', 'location'];
+    final commandPrefix = command.split('.').first;
+    if (foregroundCommands.contains(commandPrefix) && !_isAppInForeground) {
+      _log('[NODE] App backgrounded, bringing to foreground for $command');
+      try {
+        await NativeBridge.bringToForeground();
+        await Future.delayed(const Duration(milliseconds: 800));
+      } catch (e) {
+        _log('[NODE] Failed to bring app to foreground: $e');
+        _ws.sendRequest(NodeFrame.request('node.invoke.result', {
+          'id': requestId,
+          'nodeId': nodeId,
+          'ok': false,
+          'error': {
+            'code': 'APP_BACKGROUNDED',
+            'message': 'Cannot bring app to foreground for $command',
+          },
+        }));
+        return;
+      }
     }
 
     final handler = _capabilityHandlers[command];

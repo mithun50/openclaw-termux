@@ -1,6 +1,9 @@
 package com.nxg.openclawproot
 
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.LinkProperties
+import android.os.Build
 import android.system.Os
 import java.io.BufferedInputStream
 import java.io.File
@@ -787,6 +790,16 @@ class BootstrapManager(
     }
 
     private fun deleteRecursively(file: File) {
+        // CRITICAL: Do NOT follow symlinks — the rootfs contains symlinks
+        // to /storage/emulated/0 (sdcard). Following them would delete the
+        // user's photos, downloads, and other real files.
+        try {
+            val path = file.toPath()
+            if (java.nio.file.Files.isSymbolicLink(path)) {
+                file.delete()
+                return
+            }
+        } catch (_: Exception) {}
         if (file.isDirectory) {
             file.listFiles()?.forEach { deleteRecursively(it) }
         }
@@ -1212,8 +1225,31 @@ require('/root/.openclaw/proot-compat.js');
         }
     }
 
+    /**
+     * Read DNS servers from Android's active network. Falls back to
+     * Google DNS (8.8.8.8, 8.8.4.4) if system DNS is unavailable (#60).
+     */
+    private fun getSystemDnsServers(): String {
+        try {
+            val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+            if (cm != null) {
+                val network = cm.activeNetwork
+                if (network != null) {
+                    val linkProps: LinkProperties? = cm.getLinkProperties(network)
+                    val dnsServers = linkProps?.dnsServers
+                    if (dnsServers != null && dnsServers.isNotEmpty()) {
+                        val lines = dnsServers.joinToString("\n") { "nameserver ${it.hostAddress}" }
+                        // Always append Google DNS as fallback
+                        return "$lines\nnameserver 8.8.8.8\n"
+                    }
+                }
+            }
+        } catch (_: Exception) {}
+        return "nameserver 8.8.8.8\nnameserver 8.8.4.4\n"
+    }
+
     fun writeResolvConf() {
-        val content = "nameserver 8.8.8.8\nnameserver 8.8.4.4\n"
+        val content = getSystemDnsServers()
         // Try context.filesDir first (Android-guaranteed), fall back to
         // string-based configDir. Always call mkdirs() unconditionally. (#40)
         try {
@@ -1230,10 +1266,8 @@ require('/root/.openclaw/proot-compat.js');
         // even if the bind-mount fails or hasn't been set up yet (#40).
         try {
             val rootfsResolv = File(rootfsDir, "etc/resolv.conf")
-            if (!rootfsResolv.exists() || rootfsResolv.length() == 0L) {
-                rootfsResolv.parentFile?.mkdirs()
-                rootfsResolv.writeText(content)
-            }
+            rootfsResolv.parentFile?.mkdirs()
+            rootfsResolv.writeText(content)
         } catch (_: Exception) {}
     }
 

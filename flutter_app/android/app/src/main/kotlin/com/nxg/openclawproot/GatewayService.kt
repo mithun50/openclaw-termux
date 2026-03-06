@@ -14,6 +14,8 @@ import io.flutter.plugin.common.EventChannel
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
+import java.net.InetSocketAddress
+import java.net.Socket
 
 class GatewayService : Service() {
     companion object {
@@ -74,8 +76,34 @@ class GatewayService : Service() {
         super.onDestroy()
     }
 
+    /** Check if gateway port is already in use (another instance running). */
+    private fun isPortInUse(port: Int = 18789): Boolean {
+        return try {
+            Socket().use { socket ->
+                socket.connect(InetSocketAddress("127.0.0.1", port), 1000)
+                true
+            }
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     private fun startGateway() {
         if (gatewayProcess?.isAlive == true) return
+
+        // Check if an existing gateway is already listening on the port.
+        // This prevents duplicate instances when the service is recreated
+        // but an old proot process is still alive (#60).
+        if (isPortInUse()) {
+            emitLog("Gateway already running on port 18789, adopting existing instance")
+            isRunning = true
+            instance = this
+            startTime = System.currentTimeMillis()
+            updateNotificationRunning()
+            startUptimeTicker()
+            return
+        }
+
         isRunning = true
         instance = this
         startTime = System.currentTimeMillis()
@@ -121,6 +149,15 @@ class GatewayService : Service() {
                         rootfsResolv.writeText(resolvContent)
                     }
                 } catch (_: Exception) {}
+
+                // Final check right before launch — another instance may have
+                // started between the first check and now
+                if (isPortInUse()) {
+                    emitLog("Gateway already running on port 18789, skipping launch")
+                    updateNotificationRunning()
+                    startUptimeTicker()
+                    return@Thread
+                }
 
                 gatewayProcess = pm.startProotProcess("openclaw gateway --verbose")
                 updateNotificationRunning()
@@ -219,7 +256,8 @@ class GatewayService : Service() {
 
     private fun emitLog(message: String) {
         try {
-            logSink?.success(message)
+            val ts = java.time.Instant.now().toString()
+            logSink?.success("$ts $message")
         } catch (_: Exception) {}
     }
 

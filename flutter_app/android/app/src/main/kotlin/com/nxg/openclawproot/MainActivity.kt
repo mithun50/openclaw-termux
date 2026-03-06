@@ -461,6 +461,17 @@ class MainActivity : FlutterActivity() {
                         result.error("INVALID_ARGS", "path and content required", null)
                     }
                 }
+                "bringToForeground" -> {
+                    try {
+                        val intent = Intent(applicationContext, MainActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                        }
+                        applicationContext.startActivity(intent)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("FOREGROUND_ERROR", e.message, null)
+                    }
+                }
                 "readSensor" -> {
                     val sensorType = call.argument<String>("sensor") ?: "accelerometer"
                     Thread {

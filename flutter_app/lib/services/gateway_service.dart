@@ -24,6 +24,8 @@ class GatewayService {
         .replaceAll(RegExp(r'\s+'), '');
   }
 
+  static String _ts(String msg) => '${DateTime.now().toUtc().toIso8601String()} $msg';
+
   Stream<GatewayState> get stateStream => _stateController.stream;
   GatewayState get state => _state;
 
@@ -69,14 +71,14 @@ class GatewayService {
       _updateState(_state.copyWith(
         status: GatewayStatus.starting,
         dashboardUrl: savedUrl,
-        logs: [..._state.logs, '[INFO] Gateway process detected, reconnecting...'],
+        logs: [..._state.logs, _ts('[INFO] Gateway process detected, reconnecting...')],
       ));
 
       _subscribeLogs();
       _startHealthCheck();
     } else if (prefs.autoStartGateway) {
       _updateState(_state.copyWith(
-        logs: [..._state.logs, '[INFO] Auto-starting gateway...'],
+        logs: [..._state.logs, _ts('[INFO] Auto-starting gateway...')],
       ));
       await start();
     }
@@ -113,6 +115,7 @@ class GatewayService {
       'screen.record',
       'sensor.read', 'sensor.list',
       'haptic.vibrate',
+      'serial.list', 'serial.connect', 'serial.disconnect', 'serial.write', 'serial.read',
     ];
     // Use a Node.js one-liner to safely merge into existing openclaw.json
     // without clobbering other settings (API keys, onboarding config, etc.)
@@ -128,13 +131,40 @@ c.gateway.nodes.denyCommands = [];
 c.gateway.nodes.allowCommands = $allowJson;
 fs.writeFileSync(p, JSON.stringify(c, null, 2));
 ''';
+    var prootOk = false;
     try {
       await NativeBridge.runInProot(
         'node -e ${_shellEscape(script)}',
         timeout: 15,
       );
-    } catch (_) {
-      // Non-fatal: gateway may still work with default policy
+      prootOk = true;
+    } catch (_) {}
+
+    // Direct file I/O fallback (#56): if proot/node isn't ready, write the
+    // config directly on the Android filesystem so the gateway still picks
+    // up allowCommands on next start.
+    if (!prootOk) {
+      try {
+        final filesDir = await NativeBridge.getFilesDir();
+        final configFile = File('$filesDir/rootfs/ubuntu/root/.openclaw/openclaw.json');
+        Map<String, dynamic> config = {};
+        if (configFile.existsSync()) {
+          try {
+            config = Map<String, dynamic>.from(
+                jsonDecode(configFile.readAsStringSync()) as Map);
+          } catch (_) {}
+        }
+        config.putIfAbsent('gateway', () => <String, dynamic>{});
+        final gw = config['gateway'] as Map<String, dynamic>;
+        gw.putIfAbsent('nodes', () => <String, dynamic>{});
+        final nodes = gw['nodes'] as Map<String, dynamic>;
+        nodes['denyCommands'] = <String>[];
+        nodes['allowCommands'] = allowCommands;
+        configFile.parent.createSync(recursive: true);
+        configFile.writeAsStringSync(
+          const JsonEncoder.withIndent('  ').convert(config),
+        );
+      } catch (_) {}
     }
   }
 
@@ -151,7 +181,7 @@ fs.writeFileSync(p, JSON.stringify(c, null, 2));
     _updateState(_state.copyWith(
       status: GatewayStatus.starting,
       clearError: true,
-      logs: [..._state.logs, '[INFO] Starting gateway...'],
+      logs: [..._state.logs, _ts('[INFO] Starting gateway...')],
       dashboardUrl: savedUrl,
     ));
 
@@ -184,7 +214,7 @@ fs.writeFileSync(p, JSON.stringify(c, null, 2));
       _updateState(_state.copyWith(
         status: GatewayStatus.error,
         errorMessage: 'Failed to start: $e',
-        logs: [..._state.logs, '[ERROR] Failed to start: $e'],
+        logs: [..._state.logs, _ts('[ERROR] Failed to start: $e')],
       ));
     }
   }
@@ -197,7 +227,7 @@ fs.writeFileSync(p, JSON.stringify(c, null, 2));
       await NativeBridge.stopGateway();
       _updateState(GatewayState(
         status: GatewayStatus.stopped,
-        logs: [..._state.logs, '[INFO] Gateway stopped'],
+        logs: [..._state.logs, _ts('[INFO] Gateway stopped')],
       ));
     } catch (e) {
       _updateState(_state.copyWith(
@@ -225,7 +255,7 @@ fs.writeFileSync(p, JSON.stringify(c, null, 2));
         _updateState(_state.copyWith(
           status: GatewayStatus.running,
           startedAt: DateTime.now(),
-          logs: [..._state.logs, '[INFO] Gateway is healthy'],
+          logs: [..._state.logs, _ts('[INFO] Gateway is healthy')],
         ));
       }
     } catch (_) {
@@ -234,7 +264,7 @@ fs.writeFileSync(p, JSON.stringify(c, null, 2));
       if (!isRunning && _state.status != GatewayStatus.stopped) {
         _updateState(_state.copyWith(
           status: GatewayStatus.stopped,
-          logs: [..._state.logs, '[WARN] Gateway process not running'],
+          logs: [..._state.logs, _ts('[WARN] Gateway process not running')],
         ));
         _healthTimer?.cancel();
       }
