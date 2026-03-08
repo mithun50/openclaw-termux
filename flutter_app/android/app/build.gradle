@@ -33,10 +33,21 @@ if (keystorePropertiesFile.exists()) {
 def hasKeystore = keystoreProperties.containsKey('storeFile') &&
     file(keystoreProperties['storeFile']).exists()
 
+def sdkVersion = localProperties.getProperty("sdk.version")
+if (sdkVersion == null) {
+    sdkVersion = "36.1.0"
+}
+
+def ndkVersion = localProperties.getProperty("flutter.ndkVersion")
+if (ndkVersion == null) {
+    ndkVersion = "29.0.14206865"
+}
+
 android {
     namespace = "com.nxg.openclawproot"
-    compileSdk = sdk.version
-    ndkVersion = flutter.ndkVersion
+    compileSdk = sdkVersion.toInteger()
+    buildToolsVersion = sdkVersion
+    ndkVersion = ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -50,7 +61,7 @@ android {
     defaultConfig {
         applicationId = "com.nxg.openclawproot"
         minSdk = 29
-        targetSdk = sdk.version
+        targetSdk = sdkVersion.toInteger()
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
     }

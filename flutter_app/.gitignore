@@ -8,8 +8,21 @@ build/
 # Android
 android/.gradle/
 android/app/build/
-android/local.properties
 android/key.properties
+android/app/build.gradle.kts
+android/app/src/debug/
+android/app/src/main/kotlin/com/nxg/openclaw/
+android/app/src/main/res/drawable-v21/
+android/app/src/main/res/values-night/
+android/app/src/profile/
+android/build.gradle.kts
+android/settings.gradle.kts
+android/.kotlin/
+web/
+windows/
+.metadata
+README.md
+android/.gitignore
 *.jks
 *.keystore
 

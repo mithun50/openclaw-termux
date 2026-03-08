@@ -2,10 +2,40 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        // user resource to speed up build
+        maven { url 'https://maven.aliyun.com/repository/google' }
+        maven { url 'https://maven.aliyun.com/repository/jcenter' }
+        maven { url 'https://maven.aliyun.com/nexus/content/groups/public' }
+    }
+}
+
+buildscript {
+    repositories {
+        maven { url 'https://maven.aliyun.com/repository/google' }
+        maven { url 'https://maven.aliyun.com/repository/jcenter' }
+        maven { url 'https://maven.aliyun.com/nexus/content/groups/public' }
     }
 }
 
 rootProject.buildDir = "../build"
+
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader("UTF-8") { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def sdkVersion = localProperties.getProperty("sdk.version")
+if (sdkVersion == null) {
+    sdkVersion = "36.1.0"
+}
+
+def ndkVersion = localProperties.getProperty("flutter.ndkVersion")
+if (ndkVersion == null) {
+    ndkVersion = "29.0.14206865"
+}
 
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
@@ -14,14 +44,15 @@ subprojects {
     afterEvaluate { proj ->
         if (proj.plugins.hasPlugin('com.android.library') ||
             proj.plugins.hasPlugin('com.android.application')) {
-            proj.android.ndkVersion = flutter.ndkVersion
+            proj.android.ndkVersion = ndkVersion
+            proj.android.buildToolsVersion = sdkVersion
         }
     }
     if (project.name != "app") {
         project.ext.set("flutter", [
-            compileSdkVersion: sdk.version,
+            compileSdkVersion: sdkVersion.toInteger(),
             minSdkVersion: 29,
-            targetSdkVersion: 37
+            targetSdkVersion: sdkVersion.toInteger()
         ])
     }
 }
