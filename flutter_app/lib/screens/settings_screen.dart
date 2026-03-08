@@ -120,6 +120,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         value: 'zh',
                         child: Text(l10n.t('languageChinese')),
                       ),
+                      DropdownMenuItem(
+                        value: 'zh-Hant',
+                        child: Text(l10n.t('languageTraditionalChinese')),
+                      ),
+                      DropdownMenuItem(
+                        value: 'ja',
+                        child: Text(l10n.t('languageJapanese')),
+                      ),
                     ],
                     onChanged: (value) {
                       if (value != null) {
