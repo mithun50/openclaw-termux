@@ -42,7 +42,8 @@ const Map<String, String> appStringsJa = {
   'providerDetailApiKey': 'API キー',
   'providerDetailApiKeyEmpty': 'API キーは必須です',
   'providerDetailEndpoint': 'API ベース URL',
-  'providerDetailEndpointHelper': 'アカウントがカスタムまたはリージョン専用の API ベース URL を使う場合、既定のエンドポイントを上書きできます。',
+  'providerDetailEndpointHelper':
+      'アカウントがカスタムまたはリージョン専用の API ベース URL を使う場合、既定のエンドポイントを上書きできます。',
   'providerDetailEndpointInvalid': '有効な絶対 API ベース URL を入力してください',
   'providerDetailModel': 'モデル',
   'providerDetailModelEmpty': 'モデル名は必須です',
@@ -63,11 +64,13 @@ const Map<String, String> appStringsJa = {
   'providerNameOpenai': 'OpenAI',
   'providerDescriptionOpenai': 'GPT と o シリーズのモデル',
   'providerNameQwen': 'Qwen',
-  'providerDescriptionQwen': 'DashScope の OpenAI 互換 API 経由で利用できる Alibaba Cloud Qwen モデル',
+  'providerDescriptionQwen':
+      'DashScope の OpenAI 互換 API 経由で利用できる Alibaba Cloud Qwen モデル',
   'providerNameMinimax': 'MiniMax',
   'providerDescriptionMinimax': 'API エンドポイントを編集可能な MiniMax チャットモデル',
   'providerNameDoubao': 'Doubao',
-  'providerDescriptionDoubao': '公式 Ark エンドポイントのプリセット付き Volcengine Ark / Doubao モデル',
+  'providerDescriptionDoubao':
+      '公式 Ark エンドポイントのプリセット付き Volcengine Ark / Doubao モデル',
   'providerNameGoogle': 'Google Gemini',
   'providerDescriptionGoogle': 'Gemini マルチモーダルモデル群',
   'providerNameOpenrouter': 'OpenRouter',
@@ -127,7 +130,8 @@ const Map<String, String> appStringsJa = {
   'setupWizardBegin': 'セットアップ開始',
   'setupWizardRequirements': '約 500MB の空き容量とインターネット接続が必要です',
   'setupWizardStorageDialogTitle': 'セットアップ前にファイルアクセスを許可',
-  'setupWizardStorageDialogBody': 'OpenClaw のセットアップ開始前に、ファイル管理アクセスが必要です。これにより Ubuntu 環境が proot 内で共有ストレージを正しくマウントできます。次に Android の権限ページが開きます。',
+  'setupWizardStorageDialogBody':
+      'OpenClaw のセットアップ開始前に、ファイル管理アクセスが必要です。これにより Ubuntu 環境が proot 内で共有ストレージを正しくマウントできます。次に Android の権限ページが開きます。',
   'setupWizardStoragePermissionRequired': 'セットアップを開始する前にファイル管理アクセスが必要です。',
   'setupWizardOptionalPackages': 'オプションパッケージ',
   'setupWizardStepDownloadRootfs': 'Ubuntu rootfs をダウンロード',
@@ -147,7 +151,8 @@ const Map<String, String> appStringsJa = {
   'setupWizardStatusUpdatingPackageLists': 'パッケージリストを更新中...',
   'setupWizardStatusInstallingBasePackages': '基本パッケージをインストール中...',
   'setupWizardStatusDownloadingNode': 'Node.js {version} をダウンロード中...',
-  'setupWizardStatusDownloadingNodeProgress': 'Node.js をダウンロード中: {current} MB / {total} MB',
+  'setupWizardStatusDownloadingNodeProgress':
+      'Node.js をダウンロード中: {current} MB / {total} MB',
   'setupWizardStatusExtractingNode': 'Node.js を展開中...',
   'setupWizardStatusVerifyingNode': 'Node.js を検証中...',
   'setupWizardStatusNodeInstalled': 'Node.js をインストールしました',
@@ -221,13 +226,16 @@ const Map<String, String> appStringsJa = {
   'settingsStorageGranted': '許可済み - proot で /sdcard にアクセス可能',
   'settingsStorageMissing': '共有ストレージへのアクセスを許可してください',
   'settingsStorageDialogTitle': 'ファイルアクセスを許可',
-  'settingsStorageDialogBody': 'OpenClaw が共有ストレージ内のスナップショットを読み書きするには、ファイル管理アクセスが必要です。次にシステム設定ページを開きます。',
+  'settingsStorageDialogBody':
+      'OpenClaw が共有ストレージ内のスナップショットを読み書きするには、ファイル管理アクセスが必要です。次にシステム設定ページを開きます。',
   'settingsStorageDialogAction': '続行',
   'onboardingStorageDialogTitle': 'オンボーディング用にファイルアクセスを許可',
-  'onboardingStorageDialogBody': 'OpenClaw のオンボーディングでは、API キーやバインド設定中に Ubuntu が proot 内で共有ストレージをマウントできるよう、ファイル管理アクセスが必要です。次に Android の権限ページを開きます。',
+  'onboardingStorageDialogBody':
+      'OpenClaw のオンボーディングでは、API キーやバインド設定中に Ubuntu が proot 内で共有ストレージをマウントできるよう、ファイル管理アクセスが必要です。次に Android の権限ページを開きます。',
   'onboardingStoragePermissionRequired': 'オンボーディングを続行する前にファイル管理アクセスが必要です。',
   'configureStorageDialogTitle': '設定用にファイルアクセスを許可',
-  'configureStorageDialogBody': 'OpenClaw の設定では、ゲートウェイ設定の管理中に Ubuntu が proot 内で共有ストレージをマウントできるよう、ファイル管理アクセスが必要です。次に Android の権限ページを開きます。',
+  'configureStorageDialogBody':
+      'OpenClaw の設定では、ゲートウェイ設定の管理中に Ubuntu が proot 内で共有ストレージをマウントできるよう、ファイル管理アクセスが必要です。次に Android の権限ページを開きます。',
   'configureStoragePermissionRequired': '設定を続行する前にファイル管理アクセスが必要です。',
   'settingsNode': 'ノード',
   'settingsEnableNode': 'ノードを有効化',
