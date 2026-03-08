@@ -139,15 +139,7 @@ class OpenClawApp extends StatelessWidget {
           color: Colors.white,
         ),
       ),
-      cardTheme: CardThemeData(
-        elevation: 0,
-        color: AppColors.darkSurface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppColors.darkBorder),
-        ),
-        margin: const EdgeInsets.symmetric(vertical: 4),
-      ),
+      cardColor: AppColors.darkSurface,
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.accent,
@@ -209,13 +201,7 @@ class OpenClawApp extends StatelessWidget {
         color: AppColors.darkBorder,
         space: 1,
       ),
-      dialogTheme: DialogThemeData(
-        backgroundColor: AppColors.darkSurface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppColors.darkBorder),
-        ),
-      ),
+      dialogBackgroundColor: AppColors.darkSurface,
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.darkSurfaceAlt,
         contentTextStyle: GoogleFonts.inter(color: Colors.white),
@@ -270,15 +256,7 @@ class OpenClawApp extends StatelessWidget {
           color: const Color(0xFF0A0A0A),
         ),
       ),
-      cardTheme: CardThemeData(
-        elevation: 0,
-        color: AppColors.lightBg,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppColors.lightBorder),
-        ),
-        margin: const EdgeInsets.symmetric(vertical: 4),
-      ),
+      cardColor: AppColors.lightBg,
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.accent,
@@ -340,13 +318,7 @@ class OpenClawApp extends StatelessWidget {
         color: AppColors.lightBorder,
         space: 1,
       ),
-      dialogTheme: DialogThemeData(
-        backgroundColor: AppColors.lightBg,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppColors.lightBorder),
-        ),
-      ),
+      dialogBackgroundColor: AppColors.lightBg,
       snackBarTheme: SnackBarThemeData(
         backgroundColor: const Color(0xFF0A0A0A),
         contentTextStyle: GoogleFonts.inter(color: Colors.white),

@@ -73,29 +73,32 @@ class _NodeScreenState extends State<NodeScreen> {
                     Card(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
-                        child: RadioGroup<bool>(
-                          groupValue: _isLocal,
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() => _isLocal = value);
-                            }
-                          },
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              RadioListTile<bool>(
-                                title: Text(l10n.t('nodeLocalGateway')),
-                                subtitle:
-                                    Text(l10n.t('nodeLocalGatewaySubtitle')),
-                                value: true,
-                              ),
-                              RadioListTile<bool>(
-                                title: Text(l10n.t('nodeRemoteGateway')),
-                                subtitle:
-                                    Text(l10n.t('nodeRemoteGatewaySubtitle')),
-                                value: false,
-                              ),
-                              if (!_isLocal) ...[
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            RadioListTile<bool>(
+                              title: Text(l10n.t('nodeLocalGateway')),
+                              subtitle: Text(l10n.t('nodeLocalGatewaySubtitle')),
+                              value: true,
+                              groupValue: _isLocal,
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() => _isLocal = value);
+                                }
+                              },
+                            ),
+                            RadioListTile<bool>(
+                              title: Text(l10n.t('nodeRemoteGateway')),
+                              subtitle: Text(l10n.t('nodeRemoteGatewaySubtitle')),
+                              value: false,
+                              groupValue: _isLocal,
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() => _isLocal = value);
+                                }
+                              },
+                            ),
+                            if (!_isLocal) ...[
                                 const SizedBox(height: 12),
                                 TextField(
                                   controller: _hostController,
@@ -142,9 +145,8 @@ class _NodeScreenState extends State<NodeScreen> {
                                   icon: const Icon(Icons.link),
                                   label: Text(l10n.t('nodeConnect')),
                                 ),
-                              ],
                             ],
-                          ),
+                          ],
                         ),
                       ),
                     ),

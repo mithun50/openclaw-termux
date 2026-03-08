@@ -107,7 +107,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                   child: DropdownButtonFormField<String>(
-                    initialValue: localeProvider.localeCode,
+                    value: localeProvider.localeCode,
                     decoration: InputDecoration(labelText: l10n.t('language')),
                     items: [
                       DropdownMenuItem(
