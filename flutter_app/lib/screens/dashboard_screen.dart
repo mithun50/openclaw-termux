@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../constants.dart';
+import '../l10n/app_localizations.dart';
+import '../models/node_state.dart';
 import '../providers/gateway_provider.dart';
 import '../providers/node_provider.dart';
 import '../widgets/gateway_controls.dart';
@@ -23,10 +25,11 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('OpenClaw'),
+        title: Text(l10n.t('appName')),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -46,7 +49,7 @@ class DashboardScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(left: 4, bottom: 8),
               child: Text(
-                'QUICK ACTIONS',
+                l10n.t('dashboardQuickActions'),
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
@@ -55,8 +58,8 @@ class DashboardScreen extends StatelessWidget {
               ),
             ),
             StatusCard(
-              title: 'Terminal',
-              subtitle: 'Open Ubuntu shell with OpenClaw',
+              title: l10n.t('dashboardTerminalTitle'),
+              subtitle: l10n.t('dashboardTerminalSubtitle'),
               icon: Icons.terminal,
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(
@@ -75,7 +78,7 @@ class DashboardScreen extends StatelessWidget {
                         : 'Open OpenClaw dashboard in browser')
                     : 'Start gateway first';
                 return StatusCard(
-                  title: 'Web Dashboard',
+                  title: l10n.t('dashboardWebDashboardTitle'),
                   subtitle: subtitle,
                   icon: Icons.dashboard,
                   trailing: Row(
@@ -88,7 +91,8 @@ class DashboardScreen extends StatelessWidget {
                           onPressed: () {
                             Clipboard.setData(ClipboardData(text: url!));
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Dashboard URL copied')),
+                              const SnackBar(
+                                  content: Text('Dashboard URL copied')),
                             );
                           },
                         ),
@@ -108,8 +112,8 @@ class DashboardScreen extends StatelessWidget {
               },
             ),
             StatusCard(
-              title: 'Onboarding',
-              subtitle: 'Configure API keys and binding',
+              title: l10n.t('dashboardOnboardingTitle'),
+              subtitle: l10n.t('dashboardOnboardingSubtitle'),
               icon: Icons.vpn_key,
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(
@@ -117,8 +121,8 @@ class DashboardScreen extends StatelessWidget {
               ),
             ),
             StatusCard(
-              title: 'Configure',
-              subtitle: 'Manage gateway settings',
+              title: l10n.t('dashboardConfigureTitle'),
+              subtitle: l10n.t('dashboardConfigureSubtitle'),
               icon: Icons.tune,
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(
@@ -126,8 +130,8 @@ class DashboardScreen extends StatelessWidget {
               ),
             ),
             StatusCard(
-              title: 'AI Providers',
-              subtitle: 'Configure models and API keys',
+              title: l10n.t('dashboardProvidersTitle'),
+              subtitle: l10n.t('dashboardProvidersSubtitle'),
               icon: Icons.model_training,
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(
@@ -135,8 +139,8 @@ class DashboardScreen extends StatelessWidget {
               ),
             ),
             StatusCard(
-              title: 'Packages',
-              subtitle: 'Install optional tools (Go, Homebrew, SSH)',
+              title: l10n.t('dashboardPackagesTitle'),
+              subtitle: l10n.t('dashboardPackagesSubtitle'),
               icon: Icons.extension,
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(
@@ -144,8 +148,8 @@ class DashboardScreen extends StatelessWidget {
               ),
             ),
             StatusCard(
-              title: 'SSH Access',
-              subtitle: 'Remote terminal access via SSH',
+              title: l10n.t('dashboardSshTitle'),
+              subtitle: l10n.t('dashboardSshSubtitle'),
               icon: Icons.terminal,
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(
@@ -153,8 +157,8 @@ class DashboardScreen extends StatelessWidget {
               ),
             ),
             StatusCard(
-              title: 'Logs',
-              subtitle: 'View gateway output and errors',
+              title: l10n.t('dashboardLogsTitle'),
+              subtitle: l10n.t('dashboardLogsSubtitle'),
               icon: Icons.article_outlined,
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(
@@ -162,8 +166,8 @@ class DashboardScreen extends StatelessWidget {
               ),
             ),
             StatusCard(
-              title: 'Snapshot',
-              subtitle: 'Backup or restore your config',
+              title: l10n.t('dashboardSnapshotTitle'),
+              subtitle: l10n.t('dashboardSnapshotSubtitle'),
               icon: Icons.backup,
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(
@@ -174,12 +178,12 @@ class DashboardScreen extends StatelessWidget {
               builder: (context, nodeProvider, _) {
                 final nodeState = nodeProvider.state;
                 return StatusCard(
-                  title: 'Node',
+                  title: l10n.t('dashboardNodeTitle'),
                   subtitle: nodeState.isPaired
-                      ? 'Connected to gateway'
+                      ? l10n.t('dashboardNodeConnected')
                       : nodeState.isDisabled
-                          ? 'Device capabilities for AI'
-                          : nodeState.statusText,
+                          ? l10n.t('dashboardNodeDisabled')
+                          : _nodeStatusText(l10n, nodeState.status),
                   icon: Icons.devices,
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => Navigator.of(context).push(
@@ -193,14 +197,23 @@ class DashboardScreen extends StatelessWidget {
               child: Column(
                 children: [
                   Text(
-                    'OpenClaw v${AppConstants.version}',
+                    l10n.t(
+                      'dashboardVersionLabel',
+                      {'version': AppConstants.version},
+                    ),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'by ${AppConstants.authorName} | ${AppConstants.orgName}',
+                    l10n.t(
+                      'dashboardAuthorLabel',
+                      {
+                        'author': AppConstants.authorName,
+                        'org': AppConstants.orgName,
+                      },
+                    ),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -212,5 +225,22 @@ class DashboardScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _nodeStatusText(AppLocalizations l10n, NodeStatus status) {
+    switch (status) {
+      case NodeStatus.disabled:
+        return l10n.t('nodeStatusDisabled');
+      case NodeStatus.disconnected:
+        return l10n.t('nodeStatusDisconnected');
+      case NodeStatus.connecting:
+      case NodeStatus.challenging:
+      case NodeStatus.pairing:
+        return l10n.t('nodeStatusConnecting');
+      case NodeStatus.paired:
+        return l10n.t('nodeStatusPaired');
+      case NodeStatus.error:
+        return l10n.t('nodeStatusError');
+    }
   }
 }

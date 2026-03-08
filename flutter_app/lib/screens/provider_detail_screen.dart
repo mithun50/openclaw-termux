@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../app.dart';
+import '../l10n/app_localizations.dart';
 import '../models/ai_provider.dart';
 import '../services/provider_config_service.dart';
 
@@ -7,12 +8,14 @@ import '../services/provider_config_service.dart';
 class ProviderDetailScreen extends StatefulWidget {
   final AiProvider provider;
   final String? existingApiKey;
+  final String? existingBaseUrl;
   final String? existingModel;
 
   const ProviderDetailScreen({
     super.key,
     required this.provider,
     this.existingApiKey,
+    this.existingBaseUrl,
     this.existingModel,
   });
 
@@ -24,6 +27,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
   static const _customModelSentinel = '__custom__';
 
   late final TextEditingController _apiKeyController;
+  late final TextEditingController _baseUrlController;
   late final TextEditingController _customModelController;
   late String _selectedModel;
   bool _isCustomModel = false;
@@ -31,19 +35,27 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
   bool _saving = false;
   bool _removing = false;
 
-  bool get _isConfigured => widget.existingApiKey != null && widget.existingApiKey!.isNotEmpty;
+  bool get _isConfigured =>
+      widget.existingApiKey != null && widget.existingApiKey!.isNotEmpty;
 
   /// Returns the effective model name to save.
   String get _effectiveModel =>
       _isCustomModel ? _customModelController.text.trim() : _selectedModel;
 
+  bool get _supportsCustomBaseUrl => widget.provider.supportsCustomBaseUrl;
+
   @override
   void initState() {
     super.initState();
-    _apiKeyController = TextEditingController(text: widget.existingApiKey ?? '');
+    _apiKeyController =
+        TextEditingController(text: widget.existingApiKey ?? '');
+    _baseUrlController = TextEditingController(
+      text: widget.existingBaseUrl ?? widget.provider.baseUrl,
+    );
     _customModelController = TextEditingController();
 
-    final existing = widget.existingModel ?? widget.provider.defaultModels.first;
+    final existing =
+        widget.existingModel ?? widget.provider.defaultModels.first;
     if (widget.provider.defaultModels.contains(existing)) {
       _selectedModel = existing;
     } else {
@@ -57,22 +69,36 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
   @override
   void dispose() {
     _apiKeyController.dispose();
+    _baseUrlController.dispose();
     _customModelController.dispose();
     super.dispose();
   }
 
+  bool _isValidBaseUrl(String value) {
+    final uri = Uri.tryParse(value);
+    return uri != null && uri.hasScheme && uri.hasAuthority;
+  }
+
   Future<void> _save() async {
+    final l10n = context.l10n;
     final apiKey = _apiKeyController.text.trim();
     if (apiKey.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('API key cannot be empty')),
+        SnackBar(content: Text(l10n.t('providerDetailApiKeyEmpty'))),
+      );
+      return;
+    }
+    final baseUrl = _baseUrlController.text.trim();
+    if (_supportsCustomBaseUrl && !_isValidBaseUrl(baseUrl)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.t('providerDetailEndpointInvalid'))),
       );
       return;
     }
     final model = _effectiveModel;
     if (model.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Model name cannot be empty')),
+        SnackBar(content: Text(l10n.t('providerDetailModelEmpty'))),
       );
       return;
     }
@@ -82,18 +108,27 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
       await ProviderConfigService.saveProviderConfig(
         provider: widget.provider,
         apiKey: apiKey,
+        baseUrl: baseUrl,
         model: model,
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${widget.provider.name} configured and activated')),
+          SnackBar(
+            content: Text(
+              l10n.t('providerDetailSaved', {
+                'provider': widget.provider.name(l10n),
+              }),
+            ),
+          ),
         );
         Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save: $e')),
+          SnackBar(
+            content: Text(l10n.t('providerDetailSaveFailed', {'error': '$e'})),
+          ),
         );
       }
     } finally {
@@ -102,19 +137,24 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
   }
 
   Future<void> _remove() async {
+    final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Remove ${widget.provider.name}?'),
-        content: const Text('This will delete the API key and deactivate the model.'),
+        title: Text(
+          l10n.t('providerDetailRemoveTitle', {
+            'provider': widget.provider.name(l10n),
+          }),
+        ),
+        content: Text(l10n.t('providerDetailRemoveBody')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.t('commonCancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Remove'),
+            child: Text(l10n.t('providerDetailRemoveAction')),
           ),
         ],
       ),
@@ -124,17 +164,28 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
 
     setState(() => _removing = true);
     try {
-      await ProviderConfigService.removeProviderConfig(provider: widget.provider);
+      await ProviderConfigService.removeProviderConfig(
+          provider: widget.provider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${widget.provider.name} removed')),
+          SnackBar(
+            content: Text(
+              l10n.t('providerDetailRemoved', {
+                'provider': widget.provider.name(l10n),
+              }),
+            ),
+          ),
         );
         Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to remove: $e')),
+          SnackBar(
+            content: Text(
+              l10n.t('providerDetailRemoveFailed', {'error': '$e'}),
+            ),
+          ),
         );
       }
     } finally {
@@ -144,12 +195,13 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final iconBg = isDark ? AppColors.darkSurfaceAlt : const Color(0xFFF3F4F6);
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.provider.name)),
+      appBar: AppBar(title: Text(widget.provider.name(l10n))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -166,7 +218,8 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
                       color: iconBg,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(widget.provider.icon, color: widget.provider.color),
+                    child: Icon(widget.provider.icon,
+                        color: widget.provider.color),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -174,14 +227,14 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.provider.name,
+                          widget.provider.name(l10n),
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          widget.provider.description,
+                          widget.provider.description(l10n),
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
@@ -197,8 +250,9 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
 
           // API Key
           Text(
-            'API Key',
-            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+            l10n.t('providerDetailApiKey'),
+            style: theme.textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
           TextField(
@@ -207,29 +261,49 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
             decoration: InputDecoration(
               hintText: widget.provider.apiKeyHint,
               suffixIcon: IconButton(
-                icon: Icon(_obscureKey ? Icons.visibility_off : Icons.visibility),
+                icon:
+                    Icon(_obscureKey ? Icons.visibility_off : Icons.visibility),
                 onPressed: () => setState(() => _obscureKey = !_obscureKey),
               ),
             ),
           ),
+          if (_supportsCustomBaseUrl) ...[
+            const SizedBox(height: 24),
+            Text(
+              l10n.t('providerDetailEndpoint'),
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _baseUrlController,
+              keyboardType: TextInputType.url,
+              decoration: InputDecoration(
+                hintText: widget.provider.baseUrl,
+                helperText: l10n.t('providerDetailEndpointHelper'),
+              ),
+            ),
+          ],
           const SizedBox(height: 24),
 
           // Model selection
           Text(
-            'Model',
-            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+            l10n.t('providerDetailModel'),
+            style: theme.textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            value: _selectedModel,
+            initialValue: _selectedModel,
             isExpanded: true,
             decoration: const InputDecoration(),
             items: [
               ...widget.provider.defaultModels
                   .map((m) => DropdownMenuItem(value: m, child: Text(m))),
-              const DropdownMenuItem(
+              DropdownMenuItem(
                 value: _customModelSentinel,
-                child: Text('Custom...'),
+                child: Text(l10n.t('providerDetailCustomModelAction')),
               ),
             ],
             onChanged: (value) {
@@ -245,9 +319,9 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
             const SizedBox(height: 12),
             TextField(
               controller: _customModelController,
-              decoration: const InputDecoration(
-                hintText: 'e.g. meta/llama-3.3-70b-instruct',
-                labelText: 'Custom model name',
+              decoration: InputDecoration(
+                hintText: l10n.t('providerDetailCustomModelHint'),
+                labelText: l10n.t('providerDetailCustomModelLabel'),
               ),
             ),
           ],
@@ -260,9 +334,10 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
                 ? const SizedBox(
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white),
                   )
-                : const Text('Save & Activate'),
+                : Text(l10n.t('providerDetailSaveAction')),
           ),
           if (_isConfigured) ...[
             const SizedBox(height: 12),
@@ -274,7 +349,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
                       width: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Remove Configuration'),
+                  : Text(l10n.t('providerDetailRemoveConfiguration')),
             ),
           ],
         ],
