@@ -195,11 +195,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         _pty?.resize(h, w);
       };
 
+      if (!mounted) return;
       setState(() => _loading = false);
     } catch (e) {
+      if (!mounted) return;
+      final message = context.l10n.t('onboardingStartFailed', {'error': '$e'});
       setState(() {
         _loading = false;
-        _error = context.l10n.t('onboardingStartFailed', {'error': '$e'});
+        _error = message;
       });
     }
   }

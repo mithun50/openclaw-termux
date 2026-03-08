@@ -197,6 +197,8 @@ const Map<String, String> appStringsZhHans = {
       'nodeCapabilityVibrationSubtitle': '触发触觉反馈和震动模式',
       'nodeCapabilitySensorsTitle': '传感器',
       'nodeCapabilitySensorsSubtitle': '读取加速度计、陀螺仪、磁力计、气压计',
+    'nodeCapabilitySerialTitle': '串口',
+    'nodeCapabilitySerialSubtitle': '蓝牙和 USB 串口通信',
       'nodeDeviceInfo': '设备信息',
       'nodeDeviceId': '设备 ID',
       'nodeLogs': '节点日志',

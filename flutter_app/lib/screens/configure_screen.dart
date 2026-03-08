@@ -142,11 +142,14 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
         _pty?.resize(h, w);
       };
 
+      if (!mounted) return;
       setState(() => _loading = false);
     } catch (e) {
+      if (!mounted) return;
+      final message = context.l10n.t('configureStartFailed', {'error': '$e'});
       setState(() {
         _loading = false;
-        _error = context.l10n.t('configureStartFailed', {'error': '$e'});
+        _error = message;
       });
     }
   }

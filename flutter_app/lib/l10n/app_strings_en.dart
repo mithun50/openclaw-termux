@@ -217,6 +217,9 @@ const Map<String, String> appStringsEn = {
       'nodeCapabilitySensorsTitle': 'Sensors',
       'nodeCapabilitySensorsSubtitle':
           'Read accelerometer, gyroscope, magnetometer, barometer',
+      'nodeCapabilitySerialTitle': 'Serial',
+      'nodeCapabilitySerialSubtitle':
+          'Bluetooth and USB serial communication',
       'nodeDeviceInfo': 'Device info',
       'nodeDeviceId': 'Device ID',
       'nodeLogs': 'Node logs',

@@ -66,6 +66,19 @@ class OpenClawApp extends StatelessWidget {
             }
 
             for (final deviceLocale in deviceLocales ?? const <Locale>[]) {
+              if (deviceLocale.languageCode == 'zh' &&
+                  deviceLocale.scriptCode == null) {
+                final country = deviceLocale.countryCode?.toUpperCase();
+                if (country == 'TW' || country == 'HK' || country == 'MO') {
+                  for (final supportedLocale in supportedLocales) {
+                    if (supportedLocale.languageCode == 'zh' &&
+                        supportedLocale.scriptCode == 'Hant') {
+                      return supportedLocale;
+                    }
+                  }
+                }
+              }
+
               for (final supportedLocale in supportedLocales) {
                 if (supportedLocale.languageCode == deviceLocale.languageCode &&
                     supportedLocale.scriptCode == deviceLocale.scriptCode &&

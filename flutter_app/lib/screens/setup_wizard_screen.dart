@@ -21,7 +21,6 @@ class SetupWizardScreen extends StatefulWidget {
 class _SetupWizardScreenState extends State<SetupWizardScreen> {
   bool _started = false;
   Map<String, bool> _pkgStatuses = {};
-  String? _permissionError;
 
   Future<void> _refreshPkgStatuses() async {
     final statuses = await PackageService.checkAllStatuses();
@@ -40,9 +39,8 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
   Future<void> _beginSetup(SetupProvider provider) async {
     setState(() {
       _started = true;
-      _permissionError = null;
     });
-    provider.runSetup();
+    await provider.runSetup();
   }
 
   @override
@@ -93,7 +91,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                   Expanded(
                     child: _buildSteps(state, theme, isDark, l10n),
                   ),
-                  if (state.hasError || _permissionError != null) ...[
+                  if (state.hasError) ...[
                     ConstrainedBox(
                       constraints: const BoxConstraints(maxHeight: 160),
                       child: Container(
@@ -111,9 +109,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                             Expanded(
                               child: SingleChildScrollView(
                                 child: Text(
-                                  _permissionError ??
-                                      state.error ??
-                                      'Unknown error',
+                                    state.error ?? 'Unknown error',
                                   style: TextStyle(
                                       color:
                                           theme.colorScheme.onErrorContainer),
