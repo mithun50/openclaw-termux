@@ -21,11 +21,16 @@ class TerminalService {
   /// this method, so it's the single place to guarantee the files exist.
   static Future<Map<String, String>> getProotShellConfig() async {
     // Ensure dirs + resolv.conf exist before any proot operation (#40).
-    try { await NativeBridge.setupDirs(); } catch (_) {}
-    try { await NativeBridge.writeResolv(); } catch (_) {}
+    try {
+      await NativeBridge.setupDirs();
+    } catch (_) {}
+    try {
+      await NativeBridge.writeResolv();
+    } catch (_) {}
 
     final filesDir = await _channel.invokeMethod<String>('getFilesDir') ?? '';
-    final nativeLibDir = await _channel.invokeMethod<String>('getNativeLibDir') ?? '';
+    final nativeLibDir =
+        await _channel.invokeMethod<String>('getNativeLibDir') ?? '';
 
     final rootfsDir = '$filesDir/rootfs/ubuntu';
     final tmpDir = '$filesDir/tmp';
