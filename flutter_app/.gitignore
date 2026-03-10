@@ -17,12 +17,10 @@ android/app/src/profile/
 android/build.gradle.kts
 android/settings.gradle.kts
 android/.kotlin/
-android/key.properties
 web/
 windows/
 .metadata
 README.md
-android/.gitignore
 *.jks
 *.keystore
 pubspec.lock

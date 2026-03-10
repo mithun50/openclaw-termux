@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:dio/dio.dart';
 import '../constants.dart';
 import '../models/setup_state.dart';
@@ -126,7 +127,7 @@ class BootstrapService {
       await NativeBridge.extractRootfs(tarPath);
       onProgress(const SetupState(
         step: SetupStep.extractingRootfs,
-        progress: 1.0,
+        progress: 0.1,
         message: 'Rootfs extracted',
       ));
 
@@ -138,8 +139,8 @@ class BootstrapService {
       // Fix permissions inside proot (Java extraction may miss execute bits)
       _updateSetupNotification('Fixing rootfs permissions...', progress: 45);
       onProgress(const SetupState(
-        step: SetupStep.installingNode,
-        progress: 0.0,
+        step: SetupStep.extractingRootfs,
+        progress: 0.2,
         message: 'Fixing rootfs permissions...',
       ));
       // Blanket recursive chmod on all bin/lib directories.
@@ -164,9 +165,9 @@ class BootstrapService {
       // - Prefer deb822 file (ubuntu.sources) for modern Ubuntu.
       // - Disable legacy /etc/apt/sources.list by truncating it to a harmless comment.
       // - Also remove any extra *.list files that may exist from previous runs.
+      final tzId = await NativeBridge.getDeviceTimeZoneId();
+      final safeTz = tzId.replaceAll("'", "");
       try {
-        final tzId = await NativeBridge.getDeviceTimeZoneId();
-        final safeTz = tzId.replaceAll("'", "");
         if (safeTz == 'Asia/Shanghai' || safeTz == 'Asia/Urumqi') {
           await NativeBridge.runInProot(
             r'''bash -lc '
@@ -228,16 +229,16 @@ echo tuna_mirror_configured_for_$codename
       // extraction — let dpkg+tar handle it inside proot like Termux does.
       _updateSetupNotification('Updating package lists...', progress: 48);
       onProgress(const SetupState(
-        step: SetupStep.installingNode,
-        progress: 0.1,
+        step: SetupStep.extractingRootfs,
+        progress: 0.5,
         message: 'Updating package lists...',
       ));
       await NativeBridge.runInProot('apt-get update -y');
 
       _updateSetupNotification('Installing base packages...', progress: 52);
       onProgress(const SetupState(
-        step: SetupStep.installingNode,
-        progress: 0.15,
+        step: SetupStep.extractingRootfs,
+        progress: 0.8,
         message: 'Installing base packages...',
       ));
       // ca-certificates: HTTPS for npm/git
@@ -262,8 +263,6 @@ echo tuna_mirror_configured_for_$codename
       // After apt installs dependencies (including tzdata), set timezone based on
       // the device system timezone to match user's locale. Fallback to UTC.
       try {
-        final tzId = await NativeBridge.getDeviceTimeZoneId();
-        final safeTz = tzId.replaceAll("'", "");
         await NativeBridge.runInProot(
           'if [ -f "/usr/share/zoneinfo/$safeTz" ]; then '
           'ln -sf "/usr/share/zoneinfo/$safeTz" /etc/localtime && '
@@ -280,6 +279,14 @@ echo tuna_mirror_configured_for_$codename
           error: 'Setup timezone failed: $e',
         ));
       }
+      onProgress(const SetupState(
+        step: SetupStep.extractingRootfs,
+        progress: 1.0,
+        message: 'Base packages installed',
+      ));
+      await NativeBridge.runInProot(
+        'ln -sf /usr/bin/python3 /usr/bin/python',
+      );
 
       // Git config (.gitconfig) is written by installBionicBypass() on the
       // Java side — directly to $rootfsDir/root/.gitconfig — rewrites
@@ -293,7 +300,7 @@ echo tuna_mirror_configured_for_$codename
 
       onProgress(const SetupState(
         step: SetupStep.installingNode,
-        progress: 0.3,
+        progress: 0.0,
         message: 'Downloading Node.js ${AppConstants.nodeVersion}...',
       ));
       _updateSetupNotification('Downloading Node.js...', progress: 55);
@@ -321,7 +328,7 @@ echo tuna_mirror_configured_for_$codename
       _updateSetupNotification('Extracting Node.js...', progress: 72);
       onProgress(const SetupState(
         step: SetupStep.installingNode,
-        progress: 0.75,
+        progress: 0.7,
         message: 'Extracting Node.js...',
       ));
       await NativeBridge.extractNodeTarball(nodeTarPath);
@@ -355,6 +362,15 @@ echo tuna_mirror_configured_for_$codename
         message: 'Installing OpenClaw (this may take a few minutes)...',
       ));
       // Install openclaw — fork/exec works now with our Termux-matching proot.
+      if (safeTz == 'Asia/Shanghai' || safeTz == 'Asia/Urumqi') {
+        await NativeBridge.runInProot(
+          '$nodeRun $npmCli config set registry https://registry.npmmirror.com/',
+        );
+      } else {
+        await NativeBridge.runInProot(
+          '$nodeRun $npmCli config set registry https://registry.npmjs.org/',
+        );
+      }
       await NativeBridge.runInProot(
         '$nodeRun $npmCli install -g openclaw',
         timeout: 1800,
