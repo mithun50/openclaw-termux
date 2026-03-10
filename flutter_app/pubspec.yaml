@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   xterm: ^4.0.0
   flutter_pty: ^0.4.2
   webview_flutter: ^4.4.0

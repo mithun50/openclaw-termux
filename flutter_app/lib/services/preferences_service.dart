@@ -5,6 +5,7 @@ class PreferencesService {
   static const _keySetupComplete = 'setup_complete';
   static const _keyFirstRun = 'first_run';
   static const _keyDashboardUrl = 'dashboard_url';
+  static const _keyLocaleCode = 'locale_code';
   static const _keyNodeEnabled = 'node_enabled';
   static const _keyNodeDeviceToken = 'node_device_token';
   static const _keyNodeGatewayHost = 'node_gateway_host';
@@ -34,6 +35,15 @@ class PreferencesService {
       _prefs.setString(_keyDashboardUrl, value);
     } else {
       _prefs.remove(_keyDashboardUrl);
+    }
+  }
+
+  String? get localeCode => _prefs.getString(_keyLocaleCode);
+  set localeCode(String? value) {
+    if (value != null && value.isNotEmpty) {
+      _prefs.setString(_keyLocaleCode, value);
+    } else {
+      _prefs.remove(_keyLocaleCode);
     }
   }
 
@@ -82,6 +92,7 @@ class PreferencesService {
     final val = _prefs.getInt(_keyNodeGatewayPort);
     return val;
   }
+
   set nodeGatewayPort(int? value) {
     if (value != null) {
       _prefs.setInt(_keyNodeGatewayPort, value);

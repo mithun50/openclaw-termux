@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:xterm/xterm.dart';
 import 'package:flutter_pty/flutter_pty.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../l10n/app_localizations.dart';
 import '../services/native_bridge.dart';
 import '../services/screenshot_service.dart';
 import '../services/terminal_service.dart';
@@ -60,8 +61,12 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
     _pty = null;
     try {
       // Ensure dirs + resolv.conf exist before proot starts (#40).
-      try { await NativeBridge.setupDirs(); } catch (_) {}
-      try { await NativeBridge.writeResolv(); } catch (_) {}
+      try {
+        await NativeBridge.setupDirs();
+      } catch (_) {}
+      try {
+        await NativeBridge.writeResolv();
+      } catch (_) {}
       try {
         final filesDir = await NativeBridge.getFilesDir();
         const resolvContent = 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n';
@@ -88,12 +93,13 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
       configureArgs.removeLast(); // remove '-l'
       configureArgs.removeLast(); // remove '/bin/bash'
       configureArgs.addAll([
-        '/bin/bash', '-lc',
+        '/bin/bash',
+        '-lc',
         'echo "=== OpenClaw Configure ===" && '
-        'echo "Manage your gateway settings." && '
-        'echo "" && '
-        'openclaw configure; '
-        'echo "" && echo "Configuration complete! You can close this screen."',
+            'echo "Manage your gateway settings." && '
+            'echo "" && '
+            'openclaw configure; '
+            'echo "" && echo "Configuration complete! You can close this screen."',
       ]);
 
       _pty = Pty.start(
@@ -136,11 +142,14 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
         _pty?.resize(h, w);
       };
 
+      if (!mounted) return;
       setState(() => _loading = false);
     } catch (e) {
+      if (!mounted) return;
+      final message = context.l10n.t('configureStartFailed', {'error': '$e'});
       setState(() {
         _loading = false;
-        _error = 'Failed to start configure: $e';
+        _error = message;
       });
     }
   }
@@ -174,7 +183,8 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
   }
 
   String? _extractUrl(String text) {
-    final clean = text.replaceAll(_boxDrawing, '').replaceAll(RegExp(r'\s+'), '');
+    final clean =
+        text.replaceAll(_boxDrawing, '').replaceAll(RegExp(r'\s+'), '');
     final parts = clean.split(RegExp(r'(?=https?://)'));
     String? best;
     for (final part in parts) {
@@ -199,10 +209,10 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
     if (url != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Copied to clipboard'),
+          content: Text(context.l10n.t('commonCopiedToClipboard')),
           duration: const Duration(seconds: 3),
           action: SnackBarAction(
-            label: 'Open',
+            label: context.l10n.t('commonOpen'),
             onPressed: () {
               final uri = Uri.tryParse(url);
               if (uri != null) {
@@ -214,9 +224,9 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Copied to clipboard'),
-          duration: Duration(seconds: 1),
+        SnackBar(
+          content: Text(context.l10n.t('commonCopiedToClipboard')),
+          duration: const Duration(seconds: 1),
         ),
       );
     }
@@ -235,9 +245,9 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
       }
     }
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('No URL found in selection'),
-        duration: Duration(seconds: 1),
+      SnackBar(
+        content: Text(context.l10n.t('commonNoUrlFound')),
+        duration: const Duration(seconds: 1),
       ),
     );
   }
@@ -250,22 +260,27 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
   }
 
   Future<void> _takeScreenshot() async {
-    final path = await ScreenshotService.capture(_screenshotKey, prefix: 'configure');
+    final path =
+        await ScreenshotService.capture(_screenshotKey, prefix: 'configure');
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(path != null
-            ? 'Screenshot saved: ${path.split('/').last}'
-            : 'Failed to capture screenshot'),
+            ? context.l10n.t('commonScreenshotSaved', {
+                'fileName': path.split('/').last,
+              })
+            : context.l10n.t('commonSaveFailed')),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('OpenClaw Configure'),
+        title: Text(l10n.t('configureTitle')),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
@@ -274,22 +289,22 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.camera_alt_outlined),
-            tooltip: 'Screenshot',
+            tooltip: l10n.t('commonScreenshot'),
             onPressed: _takeScreenshot,
           ),
           IconButton(
             icon: const Icon(Icons.copy),
-            tooltip: 'Copy',
+            tooltip: l10n.t('commonCopy'),
             onPressed: _copySelection,
           ),
           IconButton(
             icon: const Icon(Icons.open_in_browser),
-            tooltip: 'Open URL',
+            tooltip: l10n.t('commonOpen'),
             onPressed: _openSelection,
           ),
           IconButton(
             icon: const Icon(Icons.paste),
-            tooltip: 'Paste',
+            tooltip: l10n.t('commonPaste'),
             onPressed: _paste,
           ),
         ],
@@ -297,14 +312,14 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
       body: Column(
         children: [
           if (_loading)
-            const Expanded(
+            Expanded(
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Starting configure...'),
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    Text(l10n.t('configureStarting')),
                   ],
                 ),
               ),
@@ -326,7 +341,8 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
                       Text(
                         _error!,
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.error),
                       ),
                       const SizedBox(height: 16),
                       FilledButton.icon(
@@ -339,7 +355,7 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
                           _startConfigure();
                         },
                         icon: const Icon(Icons.refresh),
-                        label: const Text('Retry'),
+                        label: Text(l10n.t('commonRetry')),
                       ),
                     ],
                   ),
@@ -376,7 +392,7 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
                 child: FilledButton.icon(
                   onPressed: () => Navigator.of(context).pop(),
                   icon: const Icon(Icons.check),
-                  label: const Text('Done'),
+                  label: Text(l10n.t('commonDone')),
                 ),
               ),
             ),

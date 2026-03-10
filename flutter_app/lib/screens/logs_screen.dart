@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../app.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/gateway_provider.dart';
 import '../services/screenshot_service.dart';
 
@@ -29,26 +30,31 @@ class _LogsScreenState extends State<LogsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gateway Logs'),
+        title: Text(l10n.t('logsTitle')),
         actions: [
           IconButton(
             icon: const Icon(Icons.camera_alt_outlined),
-            tooltip: 'Screenshot',
+            tooltip: l10n.t('commonScreenshot'),
             onPressed: _takeScreenshot,
           ),
           IconButton(
             icon: Icon(
-              _autoScroll ? Icons.vertical_align_bottom : Icons.vertical_align_top,
+              _autoScroll
+                  ? Icons.vertical_align_bottom
+                  : Icons.vertical_align_top,
             ),
-            tooltip: _autoScroll ? 'Auto-scroll on' : 'Auto-scroll off',
+            tooltip: _autoScroll
+                ? l10n.t('logsAutoScrollOn')
+                : l10n.t('logsAutoScrollOff'),
             onPressed: () => setState(() => _autoScroll = !_autoScroll),
           ),
           IconButton(
             icon: const Icon(Icons.copy),
-            tooltip: 'Copy all logs',
+            tooltip: l10n.t('logsCopyAll'),
             onPressed: () => _copyLogs(context),
           ),
         ],
@@ -60,7 +66,7 @@ class _LogsScreenState extends State<LogsScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Filter logs...',
+                hintText: l10n.t('logsFilterHint'),
                 prefixIcon: const Icon(Icons.search),
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(
@@ -84,50 +90,54 @@ class _LogsScreenState extends State<LogsScreen> {
             child: RepaintBoundary(
               key: _screenshotKey,
               child: Consumer<GatewayProvider>(
-              builder: (context, provider, _) {
-                final logs = provider.state.logs;
-                final filtered = _filter.isEmpty
-                    ? logs
-                    : logs.where((l) =>
-                        l.toLowerCase().contains(_filter.toLowerCase())).toList();
+                builder: (context, provider, _) {
+                  final logs = provider.state.logs;
+                  final filtered = _filter.isEmpty
+                      ? logs
+                      : logs
+                          .where((l) =>
+                              l.toLowerCase().contains(_filter.toLowerCase()))
+                          .toList();
 
-                if (filtered.isEmpty) {
-                  return Center(
-                    child: Text(
-                      logs.isEmpty ? 'No logs yet. Start the gateway.' : 'No matching logs.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                  if (filtered.isEmpty) {
+                    return Center(
+                      child: Text(
+                        logs.isEmpty
+                            ? l10n.t('logsEmpty')
+                            : l10n.t('logsNoMatch'),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
-                    ),
-                  );
-                }
-
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (_autoScroll && _scrollController.hasClients) {
-                    _scrollController.jumpTo(
-                      _scrollController.position.maxScrollExtent,
                     );
                   }
-                });
 
-                return ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final line = filtered[index];
-                    return Text(
-                      line,
-                      style: TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 12,
-                        color: _logColor(line, theme),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (_autoScroll && _scrollController.hasClients) {
+                      _scrollController.jumpTo(
+                        _scrollController.position.maxScrollExtent,
+                      );
+                    }
+                  });
+
+                  return ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final line = filtered[index];
+                      return Text(
+                        line,
+                        style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: _logColor(line, theme),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ),
         ],
@@ -149,13 +159,16 @@ class _LogsScreenState extends State<LogsScreen> {
   }
 
   Future<void> _takeScreenshot() async {
-    final path = await ScreenshotService.capture(_screenshotKey, prefix: 'logs');
+    final path =
+        await ScreenshotService.capture(_screenshotKey, prefix: 'logs');
     if (!mounted) return;
+    final l10n = context.l10n;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(path != null
-            ? 'Screenshot saved: ${path.split('/').last}'
-            : 'Failed to capture screenshot'),
+            ? l10n
+                .t('commonScreenshotSaved', {'fileName': path.split('/').last})
+            : l10n.t('commonSaveFailed')),
       ),
     );
   }
@@ -165,7 +178,7 @@ class _LogsScreenState extends State<LogsScreen> {
     final text = provider.state.logs.join('\n');
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Logs copied to clipboard')),
+      SnackBar(content: Text(context.l10n.t('logsCopied'))),
     );
   }
 }

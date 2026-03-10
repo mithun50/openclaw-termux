@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../app.dart';
+import '../l10n/app_localizations.dart';
 import '../models/node_state.dart';
 import '../providers/node_provider.dart';
 import '../screens/node_screen.dart';
@@ -11,6 +12,7 @@ class NodeControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     return Consumer<NodeProvider>(
       builder: (context, provider, _) {
@@ -26,19 +28,25 @@ class NodeControls extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        'Node',
+                        l10n.t('nodeTitle'),
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
-                    _statusBadge(state.status, theme),
+                    _statusBadge(context, state.status, theme),
                   ],
                 ),
                 const SizedBox(height: 8),
                 if (state.isPaired) ...[
                   Text(
-                    'Connected to ${state.gatewayHost}:${state.gatewayPort}',
+                    l10n.t(
+                      'nodeConnectedTo',
+                      {
+                        'host': state.gatewayHost,
+                        'port': state.gatewayPort,
+                      },
+                    ),
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                       fontFamily: 'monospace',
@@ -50,7 +58,7 @@ class NodeControls extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        'Pairing code: ',
+                        l10n.t('nodePairingCode'),
                         style: theme.textTheme.bodyMedium,
                       ),
                       SelectableText(
@@ -78,20 +86,20 @@ class NodeControls extends StatelessWidget {
                       FilledButton.icon(
                         onPressed: () => provider.enable(),
                         icon: const Icon(Icons.power_settings_new),
-                        label: const Text('Enable Node'),
+                        label: Text(l10n.t('nodeEnable')),
                       ),
                     if (!state.isDisabled) ...[
                       OutlinedButton.icon(
                         onPressed: () => provider.disable(),
                         icon: const Icon(Icons.stop),
-                        label: const Text('Disable Node'),
+                        label: Text(l10n.t('nodeDisable')),
                       ),
                       if (state.status == NodeStatus.error ||
                           state.status == NodeStatus.disconnected)
                         OutlinedButton.icon(
                           onPressed: () => provider.reconnect(),
                           icon: const Icon(Icons.refresh),
-                          label: const Text('Reconnect'),
+                          label: Text(l10n.t('nodeReconnect')),
                         ),
                     ],
                     OutlinedButton.icon(
@@ -99,7 +107,7 @@ class NodeControls extends StatelessWidget {
                         MaterialPageRoute(builder: (_) => const NodeScreen()),
                       ),
                       icon: const Icon(Icons.settings),
-                      label: const Text('Configure'),
+                      label: Text(l10n.t('commonConfigure')),
                     ),
                   ],
                 ),
@@ -111,7 +119,9 @@ class NodeControls extends StatelessWidget {
     );
   }
 
-  Widget _statusBadge(NodeStatus status, ThemeData theme) {
+  Widget _statusBadge(
+      BuildContext context, NodeStatus status, ThemeData theme) {
+    final l10n = context.l10n;
     Color color;
     String label;
     IconData icon;
@@ -119,25 +129,25 @@ class NodeControls extends StatelessWidget {
     switch (status) {
       case NodeStatus.paired:
         color = AppColors.statusGreen;
-        label = 'Paired';
+        label = l10n.t('nodeStatusPaired');
         icon = Icons.check_circle_outline;
       case NodeStatus.connecting:
       case NodeStatus.challenging:
       case NodeStatus.pairing:
         color = AppColors.statusAmber;
-        label = 'Connecting';
+        label = l10n.t('nodeStatusConnecting');
         icon = Icons.hourglass_top;
       case NodeStatus.error:
         color = AppColors.statusRed;
-        label = 'Error';
+        label = l10n.t('nodeStatusError');
         icon = Icons.error_outline;
       case NodeStatus.disabled:
         color = AppColors.statusGrey;
-        label = 'Disabled';
+        label = l10n.t('nodeStatusDisabled');
         icon = Icons.circle_outlined;
       case NodeStatus.disconnected:
         color = AppColors.statusGrey;
-        label = 'Disconnected';
+        label = l10n.t('nodeStatusDisconnected');
         icon = Icons.link_off;
     }
 
