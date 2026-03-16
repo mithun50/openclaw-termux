@@ -53,6 +53,9 @@ class _ProviderAuthScreenState extends State<ProviderAuthScreen> {
 
   String _outputBuffer = '';
 
+  String? _detectedUrl;
+  bool _urlDismissed = false;
+
   static const _fontFallback = [
     'monospace',
     'Noto Sans Mono',
@@ -147,11 +150,20 @@ class _ProviderAuthScreenState extends State<ProviderAuthScreen> {
 
         // Keep a buffer to detect completion or URLs.
         _outputBuffer += text;
-        if (_outputBuffer.length > 4096) {
-          _outputBuffer = _outputBuffer.substring(_outputBuffer.length - 2048);
+        if (_outputBuffer.length > 8192) {
+          _outputBuffer = _outputBuffer.substring(_outputBuffer.length - 4096);
         }
 
         final cleanText = _outputBuffer.replaceAll(_ansiEscape, '');
+
+        // Detect URLs from terminal output and surface in UI.
+        if (!_urlDismissed) {
+          final url = _extractUrl(cleanText);
+          if (url != null && url != _detectedUrl) {
+            if (mounted) setState(() => _detectedUrl = url);
+          }
+        }
+
         if (!_finished && _completionPattern.hasMatch(cleanText)) {
           if (mounted) setState(() => _finished = true);
         }
@@ -232,12 +244,20 @@ class _ProviderAuthScreenState extends State<ProviderAuthScreen> {
     for (final part in parts) {
       final match = _anyUrlRegex.firstMatch(part);
       if (match != null) {
-        final url = match.group(0)!;
+        var url = match.group(0)!;
+        // The 'to approve access' output from openclaw cli
+        const marker = 'toapproveaccess.';
+        final idx = url.indexOf(marker);
+        if (idx > 0) {
+          url = url.substring(0, idx);
+        }
+
         if (best == null || url.length > best.length) {
           best = url;
         }
       }
     }
+
     return best;
   }
 
@@ -377,6 +397,56 @@ class _ProviderAuthScreenState extends State<ProviderAuthScreen> {
       ),
       body: Column(
         children: [
+          if (_detectedUrl != null && !_urlDismissed)
+            MaterialBanner(
+              content: SelectableText(
+                _detectedUrl!,
+                maxLines: 2,
+              ),
+              leading: const Icon(Icons.link),
+              actions: [
+                TextButton(
+                  onPressed: () async {
+                    await Clipboard.setData(ClipboardData(text: _detectedUrl!));
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('URL copied'),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                  },
+                  child: const Text('Copy'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final url = _detectedUrl;
+                    if (url != null) {
+                      final uri = Uri.tryParse(url);
+                      if (uri != null) {
+                        launchUrl(uri, mode: LaunchMode.externalApplication);
+                        return;
+                      }
+                    }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Invalid URL'),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                    setState(() => _urlDismissed = true);
+                  },
+                  child: const Text('Open'),
+                ),
+                IconButton(
+                  tooltip: 'Dismiss',
+                  onPressed: () {
+                    setState(() => _urlDismissed = true);
+                  },
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
           if (_loading)
             const Expanded(
               child: Center(

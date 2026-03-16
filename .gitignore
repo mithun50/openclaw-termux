@@ -9,5 +9,6 @@ coverage/
 
 # Android signing
 flutter_app/android/key.properties
+flutter_app/android/local.properties
 *.jks
 *.keystore
