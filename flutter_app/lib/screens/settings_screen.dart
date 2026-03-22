@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../app.dart';
 import '../constants.dart';
+import '../l10n/app_localizations.dart';
+import '../providers/locale_provider.dart';
 import '../providers/node_provider.dart';
 import '../services/native_bridge.dart';
 import '../services/preferences_service.dart';
@@ -83,32 +85,69 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final localeProvider = context.watch<LocaleProvider>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(l10n.t('settingsTitle'))),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               children: [
-                _sectionHeader(theme, 'GENERAL'),
+                _sectionHeader(theme, l10n.t('settingsGeneral')),
                 SwitchListTile(
-                  title: const Text('Auto-start gateway'),
-                  subtitle: const Text('Start the gateway when the app opens'),
+                  title: Text(l10n.t('settingsAutoStart')),
+                  subtitle: Text(l10n.t('settingsAutoStartSubtitle')),
                   value: _autoStart,
                   onChanged: (value) {
                     setState(() => _autoStart = value);
                     _prefs.autoStartGateway = value;
                   },
                 ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: DropdownButtonFormField<String>(
+                    value: localeProvider.localeCode,
+                    decoration: InputDecoration(labelText: l10n.t('language')),
+                    items: [
+                      DropdownMenuItem(
+                        value: 'system',
+                        child: Text(l10n.t('languageSystem')),
+                      ),
+                      DropdownMenuItem(
+                        value: 'en',
+                        child: Text(l10n.t('languageEnglish')),
+                      ),
+                      DropdownMenuItem(
+                        value: 'zh',
+                        child: Text(l10n.t('languageChinese')),
+                      ),
+                      DropdownMenuItem(
+                        value: 'zh-Hant',
+                        child: Text(l10n.t('languageTraditionalChinese')),
+                      ),
+                      DropdownMenuItem(
+                        value: 'ja',
+                        child: Text(l10n.t('languageJapanese')),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        localeProvider.setLocaleCode(value);
+                      }
+                    },
+                  ),
+                ),
                 ListTile(
-                  title: const Text('Battery Optimization'),
+                  title: Text(l10n.t('settingsBatteryOptimization')),
                   subtitle: Text(_batteryOptimized
-                      ? 'Optimized (may kill background sessions)'
-                      : 'Unrestricted (recommended)'),
+                      ? l10n.t('settingsBatteryOptimized')
+                      : l10n.t('settingsBatteryUnrestricted')),
                   leading: const Icon(Icons.battery_alert),
                   trailing: _batteryOptimized
                       ? const Icon(Icons.warning, color: AppColors.statusAmber)
-                      : const Icon(Icons.check_circle, color: AppColors.statusGreen),
+                      : const Icon(Icons.check_circle,
+                          color: AppColors.statusGreen),
                   onTap: () async {
                     await NativeBridge.requestBatteryOptimization();
                     // Refresh status after returning from settings
@@ -117,15 +156,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),
                 ListTile(
-                  title: const Text('Setup Storage'),
+                  title: Text(l10n.t('settingsStorage')),
                   subtitle: Text(_storageGranted
-                      ? 'Granted — proot can access /sdcard. Revoke if not needed.'
-                      : 'Allow access to shared storage'),
+                      ? l10n.t('settingsStorageGranted')
+                      : l10n.t('settingsStorageMissing')),
                   leading: const Icon(Icons.sd_storage),
                   trailing: _storageGranted
-                      ? const Icon(Icons.warning_amber, color: AppColors.statusAmber)
+                      ? const Icon(Icons.check_circle,
+                          color: AppColors.statusGreen)
                       : const Icon(Icons.warning, color: AppColors.statusAmber),
                   onTap: () async {
+                    final shouldRequest = await showDialog<bool>(
+                      context: context,
+                      builder: (dialogContext) => AlertDialog(
+                        title: Text(l10n.t('settingsStorageDialogTitle')),
+                        content: Text(l10n.t('settingsStorageDialogBody')),
+                        actions: [
+                          TextButton(
+                            onPressed: () =>
+                                Navigator.of(dialogContext).pop(false),
+                            child: Text(l10n.t('commonCancel')),
+                          ),
+                          FilledButton(
+                            onPressed: () =>
+                                Navigator.of(dialogContext).pop(true),
+                            child: Text(l10n.t('settingsStorageDialogAction')),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (shouldRequest != true) {
+                      return;
+                    }
+
                     await NativeBridge.requestStoragePermission();
                     // Refresh after returning from permission screen
                     final granted = await NativeBridge.hasStoragePermission();
@@ -133,10 +197,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),
                 const Divider(),
-                _sectionHeader(theme, 'NODE'),
+                _sectionHeader(theme, l10n.t('settingsNode')),
                 SwitchListTile(
-                  title: const Text('Enable Node'),
-                  subtitle: const Text('Provide device capabilities to the gateway'),
+                  title: Text(l10n.t('settingsEnableNode')),
+                  subtitle: Text(l10n.t('settingsEnableNodeSubtitle')),
                   value: _nodeEnabled,
                   onChanged: (value) {
                     setState(() => _nodeEnabled = value);
@@ -150,8 +214,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),
                 ListTile(
-                  title: const Text('Node Configuration'),
-                  subtitle: const Text('Connection, pairing, and capabilities'),
+                  title: Text(l10n.t('settingsNodeConfiguration')),
+                  subtitle: Text(l10n.t('settingsNodeConfigurationSubtitle')),
                   leading: const Icon(Icons.devices),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => Navigator.of(context).push(
@@ -159,78 +223,78 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 const Divider(),
-                _sectionHeader(theme, 'SYSTEM INFO'),
+                _sectionHeader(theme, l10n.t('settingsSystemInfo')),
                 ListTile(
-                  title: const Text('Architecture'),
+                  title: Text(l10n.t('settingsArchitecture')),
                   subtitle: Text(_arch),
                   leading: const Icon(Icons.memory),
                 ),
                 ListTile(
-                  title: const Text('PRoot path'),
+                  title: Text(l10n.t('settingsProotPath')),
                   subtitle: Text(_prootPath),
                   leading: const Icon(Icons.folder),
                 ),
                 ListTile(
-                  title: const Text('Rootfs'),
+                  title: Text(l10n.t('settingsRootfs')),
                   subtitle: Text(_status['rootfsExists'] == true
-                      ? 'Installed'
-                      : 'Not installed'),
+                      ? l10n.t('statusInstalled')
+                      : l10n.t('statusNotInstalled')),
                   leading: const Icon(Icons.storage),
                 ),
                 ListTile(
-                  title: const Text('Node.js'),
+                  title: Text(l10n.t('settingsNodeJs')),
                   subtitle: Text(_status['nodeInstalled'] == true
-                      ? 'Installed'
-                      : 'Not installed'),
+                      ? l10n.t('statusInstalled')
+                      : l10n.t('statusNotInstalled')),
                   leading: const Icon(Icons.code),
                 ),
                 ListTile(
-                  title: const Text('OpenClaw'),
+                  title: Text(l10n.t('settingsOpenClaw')),
                   subtitle: Text(_status['openclawInstalled'] == true
-                      ? 'Installed'
-                      : 'Not installed'),
+                      ? l10n.t('statusInstalled')
+                      : l10n.t('statusNotInstalled')),
                   leading: const Icon(Icons.cloud),
                 ),
                 ListTile(
-                  title: const Text('Go (Golang)'),
+                  title: Text(l10n.t('settingsGo')),
                   subtitle: Text(_goInstalled
-                      ? 'Installed'
-                      : 'Not installed'),
+                      ? l10n.t('statusInstalled')
+                      : l10n.t('statusNotInstalled')),
                   leading: const Icon(Icons.integration_instructions),
                 ),
                 ListTile(
-                  title: const Text('Homebrew'),
+                  title: Text(l10n.t('settingsHomebrew')),
                   subtitle: Text(_brewInstalled
-                      ? 'Installed'
-                      : 'Not installed'),
+                      ? l10n.t('statusInstalled')
+                      : l10n.t('statusNotInstalled')),
                   leading: const Icon(Icons.science),
                 ),
                 ListTile(
-                  title: const Text('OpenSSH'),
+                  title: Text(l10n.t('settingsOpenSsh')),
                   subtitle: Text(_sshInstalled
-                      ? 'Installed'
-                      : 'Not installed'),
+                      ? l10n.t('statusInstalled')
+                      : l10n.t('statusNotInstalled')),
                   leading: const Icon(Icons.vpn_key),
                 ),
                 const Divider(),
-                _sectionHeader(theme, 'MAINTENANCE'),
+                _sectionHeader(theme, l10n.t('settingsMaintenance')),
                 ListTile(
-                  title: const Text('Export Snapshot'),
-                  subtitle: const Text('Backup config to Downloads'),
+                  title: Text(l10n.t('settingsExportSnapshot')),
+                  subtitle: Text(l10n.t('settingsExportSnapshotSubtitle')),
                   leading: const Icon(Icons.upload_file),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: _exportSnapshot,
                 ),
                 ListTile(
-                  title: const Text('Import Snapshot'),
-                  subtitle: const Text('Restore config from backup'),
+                  title: Text(l10n.t('settingsImportSnapshot')),
+                  subtitle: Text(l10n.t('settingsImportSnapshotSubtitle')),
                   leading: const Icon(Icons.download),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: _importSnapshot,
                 ),
                 ListTile(
-                  title: const Text('Re-run setup'),
-                  subtitle: const Text('Reinstall or repair the environment'),
+                  title: Text(l10n.t('settingsRerunSetup')),
+                  subtitle: Text(l10n.t('settingsRerunSetupSubtitle')),
                   leading: const Icon(Icons.build),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => Navigator.of(context).pushReplacement(
@@ -240,14 +304,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 const Divider(),
-                _sectionHeader(theme, 'ABOUT'),
-                const ListTile(
-                  title: Text('OpenClaw'),
+                _sectionHeader(theme, l10n.t('settingsAbout')),
+                ListTile(
+                  title: Text(l10n.t('settingsOpenClaw')),
                   subtitle: Text(
-                    'AI Gateway for Android\nVersion ${AppConstants.version}',
+                    l10n.t('settingsAboutSubtitle',
+                        {'version': AppConstants.version}),
                   ),
-                  leading: Icon(Icons.info_outline),
+                  leading: const Icon(Icons.info_outline),
                   isThreeLine: true,
+                ),
+                ListTile(
+                  title: Text(l10n.t('settingsDeveloper')),
+                  subtitle: const Text(AppConstants.authorName),
+                  leading: const Icon(Icons.person),
                 ),
                 ListTile(
                   title: const Text('Check for Updates'),
@@ -261,13 +331,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       : const Icon(Icons.system_update),
                   onTap: _checkingUpdate ? null : _checkForUpdates,
                 ),
-                const ListTile(
-                  title: Text('Developer'),
-                  subtitle: Text(AppConstants.authorName),
-                  leading: Icon(Icons.person),
-                ),
                 ListTile(
-                  title: const Text('GitHub'),
+                  title: Text(l10n.t('settingsGithub')),
                   subtitle: const Text('mithun50/openclaw-termux'),
                   leading: const Icon(Icons.code),
                   trailing: const Icon(Icons.open_in_new, size: 18),
@@ -277,7 +342,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 ListTile(
-                  title: const Text('Contact'),
+                  title: Text(l10n.t('settingsContact')),
                   subtitle: const Text(AppConstants.authorEmail),
                   leading: const Icon(Icons.email),
                   trailing: const Icon(Icons.open_in_new, size: 18),
@@ -285,10 +350,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Uri.parse('mailto:${AppConstants.authorEmail}'),
                   ),
                 ),
-                const ListTile(
-                  title: Text('License'),
-                  subtitle: Text(AppConstants.license),
-                  leading: Icon(Icons.description),
+                ListTile(
+                  title: Text(l10n.t('settingsLicense')),
+                  subtitle: const Text(AppConstants.license),
+                  leading: const Icon(Icons.description),
                 ),
                 const Divider(),
                 _sectionHeader(theme, AppConstants.orgName.toUpperCase()),
@@ -313,7 +378,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 ListTile(
-                  title: const Text('Play Store'),
+                  title: Text(l10n.t('settingsPlayStore')),
                   subtitle: const Text('NextGenX Apps'),
                   leading: const Icon(Icons.shop),
                   trailing: const Icon(Icons.open_in_new, size: 18),
@@ -323,7 +388,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 ListTile(
-                  title: const Text('Email'),
+                  title: Text(l10n.t('settingsEmail')),
                   subtitle: const Text(AppConstants.orgEmail),
                   leading: const Icon(Icons.email_outlined),
                   trailing: const Icon(Icons.open_in_new, size: 18),
@@ -353,7 +418,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _exportSnapshot() async {
     try {
-      final openclawJson = await NativeBridge.readRootfsFile('root/.openclaw/openclaw.json');
+      final openclawJson =
+          await NativeBridge.readRootfsFile('root/.openclaw/openclaw.json');
       final snapshot = {
         'version': AppConstants.version,
         'timestamp': DateTime.now().toIso8601String(),
@@ -369,16 +435,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       final path = await _getSnapshotPath();
       final file = File(path);
-      await file.writeAsString(const JsonEncoder.withIndent('  ').convert(snapshot));
+      await file
+          .writeAsString(const JsonEncoder.withIndent('  ').convert(snapshot));
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Snapshot saved to $path')),
+        SnackBar(
+          content:
+              Text(context.l10n.t('settingsSnapshotSaved', {'path': path})),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Export failed: $e')),
+        SnackBar(
+          content: Text(context.l10n.t('settingsExportFailed', {'error': e})),
+        ),
       );
     }
   }
@@ -391,7 +463,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!await file.exists()) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No snapshot found at $path')),
+          SnackBar(
+            content:
+                Text(context.l10n.t('settingsSnapshotMissing', {'path': path})),
+          ),
         );
         return;
       }
@@ -402,7 +477,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Restore openclaw.json into rootfs
       final openclawConfig = snapshot['openclawConfig'] as String?;
       if (openclawConfig != null) {
-        await NativeBridge.writeRootfsFile('root/.openclaw/openclaw.json', openclawConfig);
+        await NativeBridge.writeRootfsFile(
+            'root/.openclaw/openclaw.json', openclawConfig);
       }
 
       // Restore preferences
@@ -433,12 +509,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Snapshot restored successfully. Restart the gateway to apply.')),
+        SnackBar(content: Text(context.l10n.t('settingsSnapshotRestored'))),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Import failed: $e')),
+        SnackBar(
+          content: Text(context.l10n.t('settingsImportFailed', {'error': e})),
+        ),
       );
     }
   }

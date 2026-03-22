@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../app.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/node_provider.dart';
 import '../services/preferences_service.dart';
 import '../widgets/node_controls.dart';
@@ -51,9 +52,10 @@ class _NodeScreenState extends State<NodeScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Node Configuration')),
+      appBar: AppBar(title: Text(l10n.t('nodeConfigurationTitle'))),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : Consumer<NodeProvider>(
@@ -67,7 +69,7 @@ class _NodeScreenState extends State<NodeScreen> {
                     const SizedBox(height: 16),
 
                     // Gateway Connection
-                    _sectionHeader(theme, 'GATEWAY CONNECTION'),
+                    _sectionHeader(theme, l10n.t('nodeGatewayConnection')),
                     Card(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
@@ -75,66 +77,74 @@ class _NodeScreenState extends State<NodeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             RadioListTile<bool>(
-                              title: const Text('Local Gateway'),
-                              subtitle: const Text('Auto-pair with gateway on this device'),
+                              title: Text(l10n.t('nodeLocalGateway')),
+                              subtitle: Text(l10n.t('nodeLocalGatewaySubtitle')),
                               value: true,
                               groupValue: _isLocal,
                               onChanged: (value) {
-                                setState(() => _isLocal = value!);
+                                if (value != null) {
+                                  setState(() => _isLocal = value);
+                                }
                               },
                             ),
                             RadioListTile<bool>(
-                              title: const Text('Remote Gateway'),
-                              subtitle: const Text('Connect to a gateway on another device'),
+                              title: Text(l10n.t('nodeRemoteGateway')),
+                              subtitle: Text(l10n.t('nodeRemoteGatewaySubtitle')),
                               value: false,
                               groupValue: _isLocal,
                               onChanged: (value) {
-                                setState(() => _isLocal = value!);
+                                if (value != null) {
+                                  setState(() => _isLocal = value);
+                                }
                               },
                             ),
                             if (!_isLocal) ...[
-                              const SizedBox(height: 12),
-                              TextField(
-                                controller: _hostController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Gateway Host',
-                                  hintText: '192.168.1.100',
+                                const SizedBox(height: 12),
+                                TextField(
+                                  controller: _hostController,
+                                  decoration: InputDecoration(
+                                    labelText: l10n.t('nodeGatewayHost'),
+                                    hintText: '192.168.1.100',
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 12),
-                              TextField(
-                                controller: _portController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Gateway Port',
-                                  hintText: '18789',
+                                const SizedBox(height: 12),
+                                TextField(
+                                  controller: _portController,
+                                  decoration: InputDecoration(
+                                    labelText: l10n.t('nodeGatewayPort'),
+                                    hintText: '18789',
+                                  ),
+                                  keyboardType: TextInputType.number,
                                 ),
-                                keyboardType: TextInputType.number,
-                              ),
-                              const SizedBox(height: 12),
-                              TextField(
-                                controller: _tokenController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Gateway Token',
-                                  hintText: 'Paste token from gateway dashboard URL',
-                                  helperText: 'Found in dashboard URL after #token=',
-                                  prefixIcon: Icon(Icons.key),
+                                const SizedBox(height: 12),
+                                TextField(
+                                  controller: _tokenController,
+                                  decoration: InputDecoration(
+                                    labelText: l10n.t('nodeGatewayToken'),
+                                    hintText: l10n.t('nodeGatewayTokenHint'),
+                                    helperText:
+                                        l10n.t('nodeGatewayTokenHelper'),
+                                    prefixIcon: const Icon(Icons.key),
+                                  ),
+                                  obscureText: true,
                                 ),
-                                obscureText: true,
-                              ),
-                              const SizedBox(height: 12),
-                              FilledButton.icon(
-                                onPressed: () {
-                                  final host = _hostController.text.trim();
-                                  final port = int.tryParse(_portController.text.trim()) ?? 18789;
-                                  final token = _tokenController.text.trim();
-                                  if (host.isNotEmpty) {
-                                    provider.connectRemote(host, port,
-                                        token: token.isNotEmpty ? token : null);
-                                  }
-                                },
-                                icon: const Icon(Icons.link),
-                                label: const Text('Connect'),
-                              ),
+                                const SizedBox(height: 12),
+                                FilledButton.icon(
+                                  onPressed: () {
+                                    final host = _hostController.text.trim();
+                                    final port = int.tryParse(
+                                            _portController.text.trim()) ??
+                                        18789;
+                                    final token = _tokenController.text.trim();
+                                    if (host.isNotEmpty) {
+                                      provider.connectRemote(host, port,
+                                          token:
+                                              token.isNotEmpty ? token : null);
+                                    }
+                                  },
+                                  icon: const Icon(Icons.link),
+                                  label: Text(l10n.t('nodeConnect')),
+                                ),
                             ],
                           ],
                         ),
@@ -144,7 +154,7 @@ class _NodeScreenState extends State<NodeScreen> {
 
                     // Pairing Status
                     if (state.pairingCode != null) ...[
-                      _sectionHeader(theme, 'PAIRING'),
+                      _sectionHeader(theme, l10n.t('nodePairing')),
                       Card(
                         child: Padding(
                           padding: const EdgeInsets.all(16),
@@ -153,7 +163,7 @@ class _NodeScreenState extends State<NodeScreen> {
                               const Icon(Icons.qr_code, size: 48),
                               const SizedBox(height: 8),
                               Text(
-                                'Approve this code on the gateway:',
+                                l10n.t('nodeApproveCode'),
                                 style: theme.textTheme.bodyMedium,
                               ),
                               const SizedBox(height: 8),
@@ -173,66 +183,67 @@ class _NodeScreenState extends State<NodeScreen> {
                     ],
 
                     // Capabilities
-                    _sectionHeader(theme, 'CAPABILITIES'),
+                    _sectionHeader(theme, l10n.t('nodeCapabilities')),
                     _capabilityTile(
                       theme,
-                      'Camera',
-                      'Capture photos and video clips',
+                      l10n.t('nodeCapabilityCameraTitle'),
+                      l10n.t('nodeCapabilityCameraSubtitle'),
                       Icons.camera_alt,
                     ),
                     _capabilityTile(
                       theme,
-                      'Canvas',
-                      'Not available on mobile',
+                      l10n.t('nodeCapabilityCanvasTitle'),
+                      l10n.t('nodeCapabilityCanvasSubtitle'),
                       Icons.web,
                       available: false,
                     ),
                     _capabilityTile(
                       theme,
-                      'Location',
-                      'Get device GPS coordinates',
+                      l10n.t('nodeCapabilityLocationTitle'),
+                      l10n.t('nodeCapabilityLocationSubtitle'),
                       Icons.location_on,
                     ),
                     _capabilityTile(
                       theme,
-                      'Screen Recording',
-                      'Record device screen (requires consent each time)',
+                      l10n.t('nodeCapabilityScreenTitle'),
+                      l10n.t('nodeCapabilityScreenSubtitle'),
                       Icons.screen_share,
                     ),
                     _capabilityTile(
                       theme,
-                      'Flashlight',
-                      'Toggle device torch on/off',
+                      l10n.t('nodeCapabilityFlashlightTitle'),
+                      l10n.t('nodeCapabilityFlashlightSubtitle'),
                       Icons.flashlight_on,
                     ),
                     _capabilityTile(
                       theme,
-                      'Vibration',
-                      'Trigger haptic feedback and vibration patterns',
+                      l10n.t('nodeCapabilityVibrationTitle'),
+                      l10n.t('nodeCapabilityVibrationSubtitle'),
                       Icons.vibration,
                     ),
                     _capabilityTile(
                       theme,
-                      'Sensors',
-                      'Read accelerometer, gyroscope, magnetometer, barometer',
+                      l10n.t('nodeCapabilitySensorsTitle'),
+                      l10n.t('nodeCapabilitySensorsSubtitle'),
                       Icons.sensors,
                     ),
                     _capabilityTile(
                       theme,
-                      'Serial',
-                      'Bluetooth and USB serial communication',
+                      l10n.t('nodeCapabilitySerialTitle'),
+                      l10n.t('nodeCapabilitySerialSubtitle'),
                       Icons.usb,
                     ),
                     const SizedBox(height: 16),
 
                     // Device Info
                     if (state.deviceId != null) ...[
-                      _sectionHeader(theme, 'DEVICE INFO'),
+                      _sectionHeader(theme, l10n.t('nodeDeviceInfo')),
                       ListTile(
-                        title: const Text('Device ID'),
+                        title: Text(l10n.t('nodeDeviceId')),
                         subtitle: SelectableText(
                           state.deviceId!,
-                          style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                          style: const TextStyle(
+                              fontFamily: 'monospace', fontSize: 12),
                         ),
                         leading: const Icon(Icons.fingerprint),
                       ),
@@ -240,7 +251,7 @@ class _NodeScreenState extends State<NodeScreen> {
                     const SizedBox(height: 16),
 
                     // Logs
-                    _sectionHeader(theme, 'NODE LOGS'),
+                    _sectionHeader(theme, l10n.t('nodeLogs')),
                     Card(
                       child: Container(
                         height: 200,
@@ -248,7 +259,7 @@ class _NodeScreenState extends State<NodeScreen> {
                         child: state.logs.isEmpty
                             ? Center(
                                 child: Text(
-                                  'No logs yet',
+                                  l10n.t('nodeNoLogs'),
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: theme.colorScheme.onSurfaceVariant,
                                   ),
@@ -258,7 +269,8 @@ class _NodeScreenState extends State<NodeScreen> {
                                 reverse: true,
                                 itemCount: state.logs.length,
                                 itemBuilder: (context, index) {
-                                  final log = state.logs[state.logs.length - 1 - index];
+                                  final log =
+                                      state.logs[state.logs.length - 1 - index];
                                   return Text(
                                     log,
                                     style: const TextStyle(

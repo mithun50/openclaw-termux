@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'l10n/app_localizations.dart';
+import 'providers/locale_provider.dart';
 import 'providers/setup_provider.dart';
 import 'providers/gateway_provider.dart';
 import 'providers/node_provider.dart';
@@ -41,6 +44,7 @@ class OpenClawApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => LocaleProvider()..load()),
         ChangeNotifierProvider(create: (_) => SetupProvider()),
         ChangeNotifierProvider(create: (_) => GatewayProvider()),
         ChangeNotifierProxyProvider<GatewayProvider, NodeProvider>(
@@ -51,13 +55,66 @@ class OpenClawApp extends StatelessWidget {
           },
         ),
       ],
-      child: MaterialApp(
-        title: 'OpenClaw',
-        debugShowCheckedModeBanner: false,
-        theme: _buildLightTheme(),
-        darkTheme: _buildDarkTheme(),
-        themeMode: ThemeMode.system,
-        home: const SplashScreen(),
+      child: Consumer<LocaleProvider>(
+        builder: (context, localeProvider, _) => MaterialApp(
+          debugShowCheckedModeBanner: false,
+          onGenerateTitle: (context) => context.l10n.t('appName'),
+          locale: localeProvider.locale,
+          localeListResolutionCallback: (deviceLocales, supportedLocales) {
+            if (localeProvider.locale != null) {
+              return localeProvider.locale;
+            }
+
+            for (final deviceLocale in deviceLocales ?? const <Locale>[]) {
+              if (deviceLocale.languageCode == 'zh' &&
+                  deviceLocale.scriptCode == null) {
+                final country = deviceLocale.countryCode?.toUpperCase();
+                if (country == 'TW' || country == 'HK' || country == 'MO') {
+                  for (final supportedLocale in supportedLocales) {
+                    if (supportedLocale.languageCode == 'zh' &&
+                        supportedLocale.scriptCode == 'Hant') {
+                      return supportedLocale;
+                    }
+                  }
+                }
+              }
+
+              for (final supportedLocale in supportedLocales) {
+                if (supportedLocale.languageCode == deviceLocale.languageCode &&
+                    supportedLocale.scriptCode == deviceLocale.scriptCode &&
+                    supportedLocale.countryCode == deviceLocale.countryCode) {
+                  return supportedLocale;
+                }
+              }
+
+              for (final supportedLocale in supportedLocales) {
+                if (supportedLocale.languageCode == deviceLocale.languageCode &&
+                    supportedLocale.scriptCode == deviceLocale.scriptCode) {
+                  return supportedLocale;
+                }
+              }
+
+              for (final supportedLocale in supportedLocales) {
+                if (supportedLocale.languageCode == deviceLocale.languageCode) {
+                  return supportedLocale;
+                }
+              }
+            }
+
+            return supportedLocales.first;
+          },
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          theme: _buildLightTheme(),
+          darkTheme: _buildDarkTheme(),
+          themeMode: ThemeMode.system,
+          home: const SplashScreen(),
+        ),
       ),
     );
   }
@@ -95,15 +152,7 @@ class OpenClawApp extends StatelessWidget {
           color: Colors.white,
         ),
       ),
-      cardTheme: CardTheme(
-        elevation: 0,
-        color: AppColors.darkSurface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppColors.darkBorder),
-        ),
-        margin: const EdgeInsets.symmetric(vertical: 4),
-      ),
+      cardColor: AppColors.darkSurface,
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.accent,
@@ -165,13 +214,7 @@ class OpenClawApp extends StatelessWidget {
         color: AppColors.darkBorder,
         space: 1,
       ),
-      dialogTheme: DialogTheme(
-        backgroundColor: AppColors.darkSurface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppColors.darkBorder),
-        ),
-      ),
+      dialogBackgroundColor: AppColors.darkSurface,
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.darkSurfaceAlt,
         contentTextStyle: GoogleFonts.inter(color: Colors.white),
@@ -226,15 +269,7 @@ class OpenClawApp extends StatelessWidget {
           color: const Color(0xFF0A0A0A),
         ),
       ),
-      cardTheme: CardTheme(
-        elevation: 0,
-        color: AppColors.lightBg,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppColors.lightBorder),
-        ),
-        margin: const EdgeInsets.symmetric(vertical: 4),
-      ),
+      cardColor: AppColors.lightBg,
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.accent,
@@ -296,13 +331,7 @@ class OpenClawApp extends StatelessWidget {
         color: AppColors.lightBorder,
         space: 1,
       ),
-      dialogTheme: DialogTheme(
-        backgroundColor: AppColors.lightBg,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppColors.lightBorder),
-        ),
-      ),
+      dialogBackgroundColor: AppColors.lightBg,
       snackBarTheme: SnackBarThemeData(
         backgroundColor: const Color(0xFF0A0A0A),
         contentTextStyle: GoogleFonts.inter(color: Colors.white),

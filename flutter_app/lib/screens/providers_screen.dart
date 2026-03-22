@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../app.dart';
+import '../l10n/app_localizations.dart';
 import '../models/ai_provider.dart';
 import '../services/provider_config_service.dart';
 import 'provider_detail_screen.dart';
@@ -41,7 +42,8 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
         builder: (_) => ProviderDetailScreen(
           provider: provider,
           existingApiKey: providerConfig?['apiKey'] as String?,
-          existingModel: _activeModel,
+          existingBaseUrl: providerConfig?['baseUrl'] as String?,
+          existingModel: providerConfig?['model'] as String? ?? _activeModel,
         ),
       ),
     );
@@ -50,25 +52,36 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
     }
   }
 
-  String _statusLabel(AiProvider provider) {
+  ({String label, bool isActive}) _statusInfo(AiProvider provider) {
+    final l10n = context.l10n;
     final isConfigured = _providers.containsKey(provider.id);
-    if (!isConfigured) return '';
-    // Check if the active model belongs to this provider
-    if (_activeModel != null) {
-      final isActive = provider.defaultModels.any((m) => _activeModel!.contains(m)) ||
-          _activeModel!.contains(provider.id);
-      if (isActive) return 'Active';
+    if (!isConfigured) {
+      return (label: '', isActive: false);
     }
-    return 'Configured';
+
+    final providerConfig = _providers[provider.id] as Map<String, dynamic>?;
+    final configuredModel = providerConfig?['model'] as String?;
+    if (_activeModel != null) {
+      final isActive = configuredModel == _activeModel ||
+          provider.matchesModel(_activeModel!);
+      if (isActive) {
+        return (label: l10n.t('providersStatusActive'), isActive: true);
+      }
+    }
+    return (
+      label: l10n.t('providersStatusConfigured'),
+      isActive: false,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('AI Providers')),
+      appBar: AppBar(title: Text(l10n.t('providersScreenTitle'))),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -98,7 +111,7 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Active Model',
+                                  l10n.t('providersScreenActiveModel'),
                                   style: theme.textTheme.labelSmall?.copyWith(
                                     color: AppColors.statusGreen,
                                     fontWeight: FontWeight.w600,
@@ -121,7 +134,7 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
                   const SizedBox(height: 16),
                 ],
                 Text(
-                  'Select a provider to configure its API key and model.',
+                  l10n.t('providersScreenIntro'),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -136,7 +149,8 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
 
   Widget _buildProviderCard(ThemeData theme, AiProvider provider, bool isDark) {
     final iconBg = isDark ? AppColors.darkSurfaceAlt : const Color(0xFFF3F4F6);
-    final status = _statusLabel(provider);
+    final status = _statusInfo(provider);
+    final l10n = context.l10n;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -164,12 +178,12 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
                     Row(
                       children: [
                         Text(
-                          provider.name,
+                          provider.name(l10n),
                           style: theme.textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        if (status.isNotEmpty) ...[
+                        if (status.label.isNotEmpty) ...[
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -177,16 +191,16 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: (status == 'Active'
+                              color: (status.isActive
                                       ? AppColors.statusGreen
                                       : AppColors.statusAmber)
                                   .withAlpha(25),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              status,
+                              status.label,
                               style: theme.textTheme.labelSmall?.copyWith(
-                                color: status == 'Active'
+                                color: status.isActive
                                     ? AppColors.statusGreen
                                     : AppColors.statusAmber,
                                 fontWeight: FontWeight.w600,
@@ -198,7 +212,7 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      provider.description,
+                      provider.description(l10n),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
