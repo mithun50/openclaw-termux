@@ -125,8 +125,12 @@ class CameraCapability extends CapabilityHandler {
       // Only delete files when they are on the list to prevent accidental deletion of the album
       final index = _cameraFiles.indexWhere((item) => item['id'] == fileId && item['path'] == path);
       if (index != -1) {
-        _cameraFiles.removeAt(index);
-        await File(path).delete().catchError((_) => File(path));
+        try {
+          await File(path).delete();
+          _cameraFiles.removeAt(index);
+        } catch (_) {
+          // Keep tracking entry so dispose() can retry cleanup later.
+        }
       }
 
       return NodeFrame.response('', payload: {
