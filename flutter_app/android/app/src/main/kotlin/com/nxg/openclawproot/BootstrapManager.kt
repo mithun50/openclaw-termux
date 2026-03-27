@@ -1263,21 +1263,21 @@ require('/root/.openclaw/proot-compat.js');
             // Repair existing config: ensure gateway.mode and fix model entries (#83, #88)
             try {
                 val content = configFile.readText()
-                val org = org.json.JSONObject(content)
+                val json = org.json.JSONObject(content)
                 var modified = false
-                if (!org.has("gateway")) {
-                    org.put("gateway", org.json.JSONObject().put("mode", "local"))
+                if (!json.has("gateway")) {
+                    json.put("gateway", org.json.JSONObject().put("mode", "local"))
                     modified = true
                 } else {
-                    val gw = org.getJSONObject("gateway")
+                    val gw = json.getJSONObject("gateway")
                     if (!gw.has("mode")) {
                         gw.put("mode", "local")
                         modified = true
                     }
                 }
                 // Fix model entries: strings → objects with id field (#83, #88)
-                if (org.has("models")) {
-                    val models = org.optJSONObject("models")
+                if (json.has("models")) {
+                    val models = json.optJSONObject("models")
                     val providers = models?.optJSONObject("providers")
                     if (providers != null) {
                         val keys = providers.keys()
@@ -1298,7 +1298,7 @@ require('/root/.openclaw/proot-compat.js');
                     }
                 }
                 if (modified) {
-                    configFile.writeText(org.toString(2))
+                    configFile.writeText(json.toString(2))
                 }
             } catch (_: Exception) {}
         }
