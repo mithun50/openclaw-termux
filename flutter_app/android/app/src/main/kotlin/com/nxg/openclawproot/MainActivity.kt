@@ -149,6 +149,25 @@ class MainActivity : FlutterActivity() {
                 "isTerminalServiceRunning" -> {
                     result.success(TerminalSessionService.isRunning)
                 }
+                "startNineRouterService" -> {
+                    try {
+                        NineRouterService.start(applicationContext)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("SERVICE_ERROR", e.message, null)
+                    }
+                }
+                "stopNineRouterService" -> {
+                    try {
+                        NineRouterService.stop(applicationContext)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("SERVICE_ERROR", e.message, null)
+                    }
+                }
+                "isNineRouterServiceRunning" -> {
+                    result.success(NineRouterService.isRunning)
+                }
                 "startNodeService" -> {
                     try {
                         NodeForegroundService.start(applicationContext)

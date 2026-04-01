@@ -21,7 +21,7 @@ class PackageService {
   }
 
   /// Check installation status for all optional packages.
-  /// Returns a map of package id â†’ installed boolean.
+  /// Returns a map of package id â†?installed boolean.
   static Future<Map<String, bool>> checkAllStatuses() async {
     final rootfs = await _getRootfsDir();
     final statuses = <String, bool>{};

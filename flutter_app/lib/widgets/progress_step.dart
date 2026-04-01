@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../app.dart';
 
 class ProgressStep extends StatelessWidget {
@@ -9,7 +9,7 @@ class ProgressStep extends StatelessWidget {
   final bool hasError;
   final double? progress;
 
-  const ProgressStep({
+  ProgressStep({
     super.key,
     required this.stepNumber,
     required this.label,

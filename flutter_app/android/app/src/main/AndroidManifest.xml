@@ -66,6 +66,11 @@
             android:foregroundServiceType="specialUse" />
 
         <service
+            android:name=".NineRouterService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse" />
+
+        <service
             android:name=".TerminalSessionService"
             android:exported="false"
             android:foregroundServiceType="specialUse" />

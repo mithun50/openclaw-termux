@@ -54,7 +54,7 @@ class _TerminalToolbarState extends State<TerminalToolbar> {
     if (_ctrlActive) {
       widget.ctrlNotifier.value = false;
 
-      // Ctrl+a-z â†’ bytes 1-26
+      // Ctrl+a-z â†?bytes 1-26
       if (data.length == 1) {
         final code = data.toLowerCase().codeUnitAt(0);
         if (code >= 97 && code <= 122) {

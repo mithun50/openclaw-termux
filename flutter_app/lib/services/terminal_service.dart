@@ -13,10 +13,10 @@ class TerminalService {
       '#1 SMP PREEMPT_DYNAMIC Fri, 10 Oct 2025 00:00:00 +0000';
 
   /// Get paths and host-side proot environment variables.
-  /// Host env should ONLY contain proot-specific vars â€” guest env is
+  /// Host env should ONLY contain proot-specific vars â€?guest env is
   /// set via `env -i` inside the command, matching proot-distro.
   ///
-  /// Also ensures directories and resolv.conf exist â€” Android may clear
+  /// Also ensures directories and resolv.conf exist â€?Android may clear
   /// them during an app update (#40). Every screen that uses proot calls
   /// this method, so it's the single place to guarantee the files exist.
   static Future<Map<String, String>> getProotShellConfig() async {
@@ -64,7 +64,7 @@ class TerminalService {
       'libDir': libDir,
       'nativeLibDir': nativeLibDir,
       'storageGranted': storageGranted.toString(),
-      // Host-side proot env â€” ONLY proot-specific vars.
+      // Host-side proot env â€?ONLY proot-specific vars.
       // Do NOT set PROOT_NO_SECCOMP (proot-distro doesn't set it).
       // Do NOT set HOME/TERM/LANG here (those go in guest env via env -i).
       'PROOT_TMP_DIR': tmpDir,
@@ -76,7 +76,7 @@ class TerminalService {
 
   /// Build proot arguments matching ProcessManager.kt's gateway mode
   /// (proot-distro command_login). Uses `env -i` for a clean guest
-  /// environment â€” prevents Android JVM vars from leaking into proot.
+  /// environment â€?prevents Android JVM vars from leaking into proot.
   static List<String> buildProotArgs(Map<String, String> config,
       {int columns = 80, int rows = 24}) {
     final procFakes = '${config['configDir']}/proc_fakes';
@@ -161,7 +161,7 @@ class TerminalService {
   }
 
   /// Host-side environment map for Pty.start().
-  /// Only proot-specific vars â€” no guest vars (those are in env -i).
+  /// Only proot-specific vars â€?no guest vars (those are in env -i).
   static Map<String, String> buildHostEnv(Map<String, String> config) {
     return {
       'PROOT_TMP_DIR': config['PROOT_TMP_DIR']!,

@@ -139,7 +139,7 @@ class BootstrapService {
       ));
       // Blanket recursive chmod on all bin/lib directories.
       // Java tar extraction loses execute bits; dpkg needs tar, xz,
-      // gzip, rm, mv, etc. â€” easier to fix everything than enumerate.
+      // gzip, rm, mv, etc. â€?easier to fix everything than enumerate.
       await NativeBridge.runInProot(
         'chmod -R 755 /usr/bin /usr/sbin /bin /sbin '
         '/usr/local/bin /usr/local/sbin 2>/dev/null; '
@@ -153,7 +153,7 @@ class BootstrapService {
       // --- Install base packages via apt-get (like Termux proot-distro) ---
       // Now that our proot matches Termux exactly (env -i, clean host env,
       // proper flags), dpkg works normally. No need for Java-side deb
-      // extraction â€” let dpkg+tar handle it inside proot like Termux does.
+      // extraction â€?let dpkg+tar handle it inside proot like Termux does.
       _updateSetupNotification('Updating package lists...', progress: 48);
       onProgress(const SetupState(
         step: SetupStep.installingNode,
@@ -173,7 +173,7 @@ class BootstrapService {
       // python3, make, g++: node-gyp needs these to compile native addons
       //   (npm's bundled node-gyp runs as a JS module, not a spawned process,
       //    so proot-compat.js spawn mock can't intercept it)
-      // dpkg extracts via tar inside proot â€” permissions are correct.
+      // dpkg extracts via tar inside proot â€?permissions are correct.
       // Post-install scripts (update-ca-certificates) run automatically.
       // Pre-configure tzdata to avoid interactive continent/timezone prompt
       // (tzdata is a dependency of python3 and ignores DEBIAN_FRONTEND on
@@ -188,7 +188,7 @@ class BootstrapService {
       );
 
       // Git config (.gitconfig) is written by installBionicBypass() on the
-      // Java side â€” directly to $rootfsDir/root/.gitconfig â€” rewrites
+      // Java side â€?directly to $rootfsDir/root/.gitconfig â€?rewrites
       // SSHâ†’HTTPS for npm git deps (no SSH keys in proot).
 
       // --- Install Node.js via binary tarball ---
@@ -259,7 +259,7 @@ class BootstrapService {
         progress: 0.0,
         message: 'Installing OpenClaw (this may take a few minutes)...',
       ));
-      // Install openclaw â€” fork/exec works now with our Termux-matching proot.
+      // Install openclaw â€?fork/exec works now with our Termux-matching proot.
       await NativeBridge.runInProot(
         '$nodeRun $npmCli install -g openclaw',
         timeout: 1800,
@@ -273,7 +273,7 @@ class BootstrapService {
       ));
       // npm global install creates symlinks for bin entries, but symlinks
       // can fail silently in proot. Create shell wrappers from Java side
-      // (reads package.json directly from rootfs filesystem â€” no escaping).
+      // (reads package.json directly from rootfs filesystem â€?no escaping).
       await NativeBridge.createBinWrappers('openclaw');
 
       _updateSetupNotification('Verifying OpenClaw...', progress: 96);

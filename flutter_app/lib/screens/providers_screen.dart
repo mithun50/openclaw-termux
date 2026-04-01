@@ -1,7 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../app.dart';
+import '../l10n/app_strings.dart';
 import '../models/ai_provider.dart';
 import '../services/provider_config_service.dart';
+import '../utils/responsive.dart';
 import 'provider_detail_screen.dart';
 
 /// Lists all AI providers with their configuration status.
@@ -53,13 +55,12 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
   String _statusLabel(AiProvider provider) {
     final isConfigured = _providers.containsKey(provider.id);
     if (!isConfigured) return '';
-    // Check if the active model belongs to this provider
     if (_activeModel != null) {
       final isActive = provider.defaultModels.any((m) => _activeModel!.contains(m)) ||
           _activeModel!.contains(provider.id);
-      if (isActive) return 'Active';
+      if (isActive) return AppStrings.active;
     }
-    return 'Configured';
+    return AppStrings.configured;
   }
 
   @override
@@ -68,68 +69,69 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('AI Providers')),
+      appBar: AppBar(title: Text(AppStrings.aiProviders)),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                // Active model card
-                if (_activeModel != null && _activeModel!.isNotEmpty) ...[
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: AppColors.statusGreen.withAlpha(25),
-                              borderRadius: BorderRadius.circular(12),
+          ? Center(child: CircularProgressIndicator())
+          : Responsive.constrain(
+              ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  if (_activeModel != null && _activeModel!.isNotEmpty) ...[
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: AppColors.statusGreen.withAlpha(25),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.check_circle,
+                                color: AppColors.statusGreen,
+                              ),
                             ),
-                            child: const Icon(
-                              Icons.check_circle,
-                              color: AppColors.statusGreen,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Active Model',
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: AppColors.statusGreen,
-                                    fontWeight: FontWeight.w600,
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    AppStrings.activeModel,
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: AppColors.statusGreen,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  _activeModel!,
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w600,
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    _activeModel!,
+                                    style: theme.textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  Text(
+                    AppStrings.selectProvider,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 16),
+                  for (final provider in AiProvider.all)
+                    _buildProviderCard(theme, provider, isDark),
                 ],
-                Text(
-                  'Select a provider to configure its API key and model.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                for (final provider in AiProvider.all)
-                  _buildProviderCard(theme, provider, isDark),
-              ],
+              ),
             ),
     );
   }
@@ -177,7 +179,7 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: (status == 'Active'
+                              color: (status == AppStrings.active
                                       ? AppColors.statusGreen
                                       : AppColors.statusAmber)
                                   .withAlpha(25),
@@ -186,7 +188,7 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
                             child: Text(
                               status,
                               style: theme.textTheme.labelSmall?.copyWith(
-                                color: status == 'Active'
+                                color: status == AppStrings.active
                                     ? AppColors.statusGreen
                                     : AppColors.statusAmber,
                                 fontWeight: FontWeight.w600,

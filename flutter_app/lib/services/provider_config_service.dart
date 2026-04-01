@@ -39,7 +39,8 @@ class ProviderConfigService {
       final providers = <String, dynamic>{};
       final modelsSection = config['models'] as Map<String, dynamic>?;
       if (modelsSection != null) {
-        final providerEntries = modelsSection['providers'] as Map<String, dynamic>?;
+        final providerEntries =
+            modelsSection['providers'] as Map<String, dynamic>?;
         if (providerEntries != null) {
           for (final entry in providerEntries.entries) {
             providers[entry.key] = entry.value;
@@ -60,10 +61,12 @@ class ProviderConfigService {
     required AiProvider provider,
     required String apiKey,
     required String model,
+    String? baseUrl,
   }) async {
+    final effectiveBaseUrl = baseUrl ?? provider.baseUrl;
     final providerIdJson = jsonEncode(provider.id);
     final apiKeyJson = jsonEncode(apiKey);
-    final baseUrlJson = jsonEncode(provider.baseUrl);
+    final baseUrlJson = jsonEncode(effectiveBaseUrl);
     final modelJson = jsonEncode(model);
 
     // Build the provider object with the model as an object containing `id`,
@@ -100,7 +103,7 @@ fs.writeFileSync(p, JSON.stringify(c, null, 2));
       await _saveConfigDirect(
         providerId: provider.id,
         apiKey: apiKey,
-        baseUrl: provider.baseUrl,
+        baseUrl: effectiveBaseUrl,
         model: model,
       );
     }
@@ -123,20 +126,28 @@ fs.writeFileSync(p, JSON.stringify(c, null, 2));
       // Start fresh
     }
 
-    // Merge provider entry — models must be objects with `id`, not bare strings (#83, #88).
+    // Merge provider entry �?models must be objects with `id`, not bare strings (#83, #88).
     config['models'] ??= <String, dynamic>{};
-    (config['models'] as Map<String, dynamic>)['providers'] ??= <String, dynamic>{};
-    ((config['models'] as Map<String, dynamic>)['providers'] as Map<String, dynamic>)[providerId] = {
+    (config['models'] as Map<String, dynamic>)['providers'] ??=
+        <String, dynamic>{};
+    ((config['models'] as Map<String, dynamic>)['providers']
+        as Map<String, dynamic>)[providerId] = {
       'apiKey': apiKey,
       'baseUrl': baseUrl,
-      'models': [{'id': model}],
+      'models': [
+        {'id': model}
+      ],
     };
 
     // Set active model
     config['agents'] ??= <String, dynamic>{};
-    (config['agents'] as Map<String, dynamic>)['defaults'] ??= <String, dynamic>{};
-    ((config['agents'] as Map<String, dynamic>)['defaults'] as Map<String, dynamic>)['model'] ??= <String, dynamic>{};
-    (((config['agents'] as Map<String, dynamic>)['defaults'] as Map<String, dynamic>)['model'] as Map<String, dynamic>)['primary'] = model;
+    (config['agents'] as Map<String, dynamic>)['defaults'] ??=
+        <String, dynamic>{};
+    ((config['agents'] as Map<String, dynamic>)['defaults']
+        as Map<String, dynamic>)['model'] ??= <String, dynamic>{};
+    (((config['agents'] as Map<String, dynamic>)['defaults']
+            as Map<String, dynamic>)['model']
+        as Map<String, dynamic>)['primary'] = model;
 
     // Ensure gateway.mode is set (#93, #90)
     config['gateway'] ??= <String, dynamic>{};

@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../app.dart';
 import '../services/ssh_service.dart';
 import 'packages_screen.dart';
 
-/// SSH server management screen — start/stop sshd, set password, show connection info.
+/// SSH server management screen �?start/stop sshd, set password, show connection info.
 class SshScreen extends StatefulWidget {
   const SshScreen({super.key});
 
@@ -127,7 +127,7 @@ class _SshScreenState extends State<SshScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('SSH Access')),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : _installed
               ? _buildInstalledView(theme, isDark)
               : _buildNotInstalledView(theme),
