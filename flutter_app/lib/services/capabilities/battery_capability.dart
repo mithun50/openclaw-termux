@@ -16,7 +16,7 @@ class BatteryCapability extends CapabilityHandler {
   Future<bool> requestPermission() async => true;
 
   @override
-  Future<NodeFrame> handle(String command, Map params) async {
+  Future<NodeFrame> handle(String command, Map<String, dynamic> params) async {
     switch (command) {
       case 'battery.status':
         return _status();
