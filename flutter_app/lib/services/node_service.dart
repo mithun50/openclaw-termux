@@ -263,7 +263,7 @@ class NodeService {
     ));
     _log('[NODE] Paired and connected');
 
-    // Send capabilities advertisement â€” include both 'capabilities' (legacy)
+    // Send capabilities advertisement â€?include both 'capabilities' (legacy)
     // and 'commands' (matching the connect frame format) so the gateway can
     // discover node commands regardless of which field it checks (#56).
     final capabilities = _capabilityHandlers.keys.toList();

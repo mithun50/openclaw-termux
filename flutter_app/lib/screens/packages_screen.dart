@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../app.dart';
 import '../models/optional_package.dart';
 import '../services/package_service.dart';
@@ -82,7 +82,7 @@ class _PackagesScreenState extends State<PackagesScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Optional Packages')),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [

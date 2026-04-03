@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../app.dart';
 import '../constants.dart';
+import '../l10n/app_strings.dart';
 import '../models/gateway_state.dart';
 import '../providers/gateway_provider.dart';
 import '../screens/logs_screen.dart';
@@ -29,7 +30,7 @@ class GatewayControls extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        'Gateway',
+                        AppStrings.gateway,
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -66,21 +67,22 @@ class GatewayControls extends StatelessWidget {
                       ),
                       IconButton(
                         icon: const Icon(Icons.copy, size: 18),
-                        tooltip: 'Copy URL',
+                        tooltip: AppStrings.copyUrl,
                         onPressed: () {
-                          final url = state.dashboardUrl ?? AppConstants.gatewayUrl;
+                          final url =
+                              state.dashboardUrl ?? AppConstants.gatewayUrl;
                           Clipboard.setData(ClipboardData(text: url));
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('URL copied to clipboard'),
-                              duration: Duration(seconds: 2),
+                            SnackBar(
+                              content: Text(AppStrings.urlCopied),
+                              duration: const Duration(seconds: 2),
                             ),
                           );
                         },
                       ),
                       IconButton(
                         icon: const Icon(Icons.open_in_new, size: 18),
-                        tooltip: 'Open dashboard',
+                        tooltip: AppStrings.openDashboard,
                         onPressed: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
@@ -108,20 +110,21 @@ class GatewayControls extends StatelessWidget {
                       FilledButton.icon(
                         onPressed: () => provider.start(),
                         icon: const Icon(Icons.play_arrow),
-                        label: const Text('Start Gateway'),
+                        label: Text(AppStrings.startGateway),
                       ),
-                    if (state.isRunning || state.status == GatewayStatus.starting)
+                    if (state.isRunning ||
+                        state.status == GatewayStatus.starting)
                       OutlinedButton.icon(
                         onPressed: () => provider.stop(),
                         icon: const Icon(Icons.stop),
-                        label: const Text('Stop Gateway'),
+                        label: Text(AppStrings.stopGateway),
                       ),
                     OutlinedButton.icon(
                       onPressed: () => Navigator.of(context).push(
                         MaterialPageRoute(builder: (_) => const LogsScreen()),
                       ),
                       icon: const Icon(Icons.article_outlined),
-                      label: const Text('View Logs'),
+                      label: Text(AppStrings.viewLogs),
                     ),
                   ],
                 ),
@@ -141,19 +144,19 @@ class GatewayControls extends StatelessWidget {
     switch (status) {
       case GatewayStatus.running:
         color = AppColors.statusGreen;
-        label = 'Running';
+        label = AppStrings.gatewayRunning;
         icon = Icons.check_circle_outline;
       case GatewayStatus.starting:
         color = AppColors.statusAmber;
-        label = 'Starting';
+        label = AppStrings.gatewayStarting;
         icon = Icons.hourglass_top;
       case GatewayStatus.error:
         color = AppColors.statusRed;
-        label = 'Error';
+        label = AppStrings.gatewayError;
         icon = Icons.error_outline;
       case GatewayStatus.stopped:
         color = AppColors.statusGrey;
-        label = 'Stopped';
+        label = AppStrings.gatewayStopped;
         icon = Icons.circle_outlined;
     }
 

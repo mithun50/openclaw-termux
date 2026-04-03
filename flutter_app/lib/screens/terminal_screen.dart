@@ -1,10 +1,11 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:xterm/xterm.dart';
 import 'package:flutter_pty/flutter_pty.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../l10n/app_strings.dart';
 import '../services/native_bridge.dart';
 import '../services/screenshot_service.dart';
 import '../services/terminal_service.dart';
@@ -107,14 +108,14 @@ class _TerminalScreenState extends State<TerminalScreen> {
         if (_ctrlNotifier.value && data.length == 1) {
           final code = data.toLowerCase().codeUnitAt(0);
           if (code >= 97 && code <= 122) {
-            // Ctrl+a-z → bytes 1-26
+            // Ctrl+a-z �?bytes 1-26
             _pty?.write(Uint8List.fromList([code - 96]));
             _ctrlNotifier.value = false;
             return;
           }
         }
         if (_altNotifier.value && data.isNotEmpty) {
-          // Alt+key → ESC + key
+          // Alt+key �?ESC + key
           _pty?.write(utf8.encode('\x1b$data'));
           _altNotifier.value = false;
           return;
@@ -195,10 +196,10 @@ class _TerminalScreenState extends State<TerminalScreen> {
     if (url != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Copied to clipboard'),
+          content: Text(AppStrings.copied),
           duration: const Duration(seconds: 3),
           action: SnackBarAction(
-            label: 'Open',
+            label: '打开',
             onPressed: () {
               final uri = Uri.tryParse(url);
               if (uri != null) {
@@ -210,9 +211,9 @@ class _TerminalScreenState extends State<TerminalScreen> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Copied to clipboard'),
-          duration: Duration(seconds: 1),
+        SnackBar(
+          content: Text(AppStrings.copied),
+          duration: const Duration(seconds: 1),
         ),
       );
     }
@@ -231,9 +232,9 @@ class _TerminalScreenState extends State<TerminalScreen> {
       }
     }
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('No URL found in selection'),
-        duration: Duration(seconds: 1),
+      SnackBar(
+        content: Text(AppStrings.noUrlFound),
+        duration: const Duration(seconds: 1),
       ),
     );
   }
@@ -251,8 +252,8 @@ class _TerminalScreenState extends State<TerminalScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(path != null
-            ? 'Screenshot saved: ${path.split('/').last}'
-            : 'Failed to capture screenshot'),
+            ? '截图已保�? ${path.split('/').last}'
+            : '截图失败'),
       ),
     );
   }
@@ -302,24 +303,24 @@ class _TerminalScreenState extends State<TerminalScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(AppStrings.cancel),
           ),
           TextButton(
             onPressed: () {
               Clipboard.setData(ClipboardData(text: url));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Link copied'),
-                  duration: Duration(seconds: 1),
+                SnackBar(
+                  content: Text(AppStrings.linkCopied),
+                  duration: const Duration(seconds: 1),
                 ),
               );
               Navigator.pop(ctx, false);
             },
-            child: const Text('Copy'),
+            child: Text(AppStrings.copy),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Open'),
+            child: const Text('打开'),
           ),
         ],
       ),
@@ -334,31 +335,31 @@ class _TerminalScreenState extends State<TerminalScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Terminal'),
+        title: Text(AppStrings.terminal),
         actions: [
           IconButton(
             icon: const Icon(Icons.camera_alt_outlined),
-            tooltip: 'Screenshot',
+            tooltip: AppStrings.screenshot,
             onPressed: _takeScreenshot,
           ),
           IconButton(
             icon: const Icon(Icons.copy),
-            tooltip: 'Copy',
+            tooltip: AppStrings.copy,
             onPressed: _copySelection,
           ),
           IconButton(
             icon: const Icon(Icons.open_in_browser),
-            tooltip: 'Open URL',
+            tooltip: AppStrings.openUrl,
             onPressed: _openSelection,
           ),
           IconButton(
             icon: const Icon(Icons.paste),
-            tooltip: 'Paste',
+            tooltip: AppStrings.paste,
             onPressed: _paste,
           ),
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'Restart',
+            tooltip: AppStrings.restart,
             onPressed: () {
               _pty?.kill();
               setState(() {
@@ -376,13 +377,13 @@ class _TerminalScreenState extends State<TerminalScreen> {
 
   Widget _buildBody() {
     if (_loading) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             CircularProgressIndicator(),
             SizedBox(height: 16),
-            Text('Starting terminal...'),
+            Text(AppStrings.startingTerminal),
           ],
         ),
       );
@@ -416,7 +417,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
                   _startPty();
                 },
                 icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
+                label: Text(AppStrings.retry),
               ),
             ],
           ),

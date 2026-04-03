@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../app.dart';
+import '../l10n/app_strings.dart';
 import '../providers/node_provider.dart';
 import '../services/preferences_service.dart';
+import '../utils/responsive.dart';
 import '../widgets/node_controls.dart';
 
 class NodeScreen extends StatefulWidget {
@@ -53,226 +55,183 @@ class _NodeScreenState extends State<NodeScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Node Configuration')),
+      appBar: AppBar(title: Text(AppStrings.nodeConfiguration)),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : Consumer<NodeProvider>(
-              builder: (context, provider, _) {
-                final state = provider.state;
-
-                return ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    const NodeControls(),
-                    const SizedBox(height: 16),
-
-                    // Gateway Connection
-                    _sectionHeader(theme, 'GATEWAY CONNECTION'),
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            RadioListTile<bool>(
-                              title: const Text('Local Gateway'),
-                              subtitle: const Text('Auto-pair with gateway on this device'),
-                              value: true,
-                              groupValue: _isLocal,
-                              onChanged: (value) {
-                                setState(() => _isLocal = value!);
-                              },
-                            ),
-                            RadioListTile<bool>(
-                              title: const Text('Remote Gateway'),
-                              subtitle: const Text('Connect to a gateway on another device'),
-                              value: false,
-                              groupValue: _isLocal,
-                              onChanged: (value) {
-                                setState(() => _isLocal = value!);
-                              },
-                            ),
-                            if (!_isLocal) ...[
-                              const SizedBox(height: 12),
-                              TextField(
-                                controller: _hostController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Gateway Host',
-                                  hintText: '192.168.1.100',
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              TextField(
-                                controller: _portController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Gateway Port',
-                                  hintText: '18789',
-                                ),
-                                keyboardType: TextInputType.number,
-                              ),
-                              const SizedBox(height: 12),
-                              TextField(
-                                controller: _tokenController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Gateway Token',
-                                  hintText: 'Paste token from gateway dashboard URL',
-                                  helperText: 'Found in dashboard URL after #token=',
-                                  prefixIcon: Icon(Icons.key),
-                                ),
-                                obscureText: true,
-                              ),
-                              const SizedBox(height: 12),
-                              FilledButton.icon(
-                                onPressed: () {
-                                  final host = _hostController.text.trim();
-                                  final port = int.tryParse(_portController.text.trim()) ?? 18789;
-                                  final token = _tokenController.text.trim();
-                                  if (host.isNotEmpty) {
-                                    provider.connectRemote(host, port,
-                                        token: token.isNotEmpty ? token : null);
-                                  }
-                                },
-                                icon: const Icon(Icons.link),
-                                label: const Text('Connect'),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Pairing Status
-                    if (state.pairingCode != null) ...[
-                      _sectionHeader(theme, 'PAIRING'),
+          : Responsive.constrain(
+              Consumer<NodeProvider>(
+                builder: (context, provider, _) {
+                  final state = provider.state;
+                  return ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      const NodeControls(),
+                      const SizedBox(height: 16),
+                      _sectionHeader(theme, AppStrings.gatewayConnection),
                       Card(
                         child: Padding(
                           padding: const EdgeInsets.all(16),
                           child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(Icons.qr_code, size: 48),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Approve this code on the gateway:',
-                                style: theme.textTheme.bodyMedium,
+                              RadioListTile<bool>(
+                                title: Text(AppStrings.localGateway),
+                                subtitle: Text(AppStrings.localGatewaySubtitle),
+                                value: true,
+                                groupValue: _isLocal,
+                                onChanged: (v) => setState(() => _isLocal = v!),
                               ),
-                              const SizedBox(height: 8),
-                              SelectableText(
-                                state.pairingCode!,
-                                style: theme.textTheme.headlineMedium?.copyWith(
-                                  fontFamily: 'monospace',
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.primary,
+                              RadioListTile<bool>(
+                                title: Text(AppStrings.remoteGateway),
+                                subtitle:
+                                    Text(AppStrings.remoteGatewaySubtitle),
+                                value: false,
+                                groupValue: _isLocal,
+                                onChanged: (v) => setState(() => _isLocal = v!),
+                              ),
+                              if (!_isLocal) ...[
+                                const SizedBox(height: 12),
+                                TextField(
+                                  controller: _hostController,
+                                  decoration: InputDecoration(
+                                    labelText: AppStrings.gatewayHost,
+                                    hintText: '192.168.1.100',
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(height: 12),
+                                TextField(
+                                  controller: _portController,
+                                  decoration: InputDecoration(
+                                    labelText: AppStrings.gatewayPort,
+                                    hintText: '18789',
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                ),
+                                const SizedBox(height: 12),
+                                TextField(
+                                  controller: _tokenController,
+                                  decoration: InputDecoration(
+                                    labelText: AppStrings.gatewayToken,
+                                    hintText: AppStrings.gatewayTokenHint,
+                                    helperText: AppStrings.gatewayTokenHelper,
+                                    prefixIcon: const Icon(Icons.key),
+                                  ),
+                                  obscureText: true,
+                                ),
+                                const SizedBox(height: 12),
+                                FilledButton.icon(
+                                  onPressed: () {
+                                    final host = _hostController.text.trim();
+                                    final port = int.tryParse(
+                                            _portController.text.trim()) ??
+                                        18789;
+                                    final token = _tokenController.text.trim();
+                                    if (host.isNotEmpty) {
+                                      provider.connectRemote(host, port,
+                                          token:
+                                              token.isNotEmpty ? token : null);
+                                    }
+                                  },
+                                  icon: const Icon(Icons.link),
+                                  label: Text(AppStrings.connect),
+                                ),
+                              ],
                             ],
                           ),
                         ),
                       ),
                       const SizedBox(height: 16),
-                    ],
-
-                    // Capabilities
-                    _sectionHeader(theme, 'CAPABILITIES'),
-                    _capabilityTile(
-                      theme,
-                      'Camera',
-                      'Capture photos and video clips',
-                      Icons.camera_alt,
-                    ),
-                    _capabilityTile(
-                      theme,
-                      'Canvas',
-                      'Not available on mobile',
-                      Icons.web,
-                      available: false,
-                    ),
-                    _capabilityTile(
-                      theme,
-                      'Location',
-                      'Get device GPS coordinates',
-                      Icons.location_on,
-                    ),
-                    _capabilityTile(
-                      theme,
-                      'Screen Recording',
-                      'Record device screen (requires consent each time)',
-                      Icons.screen_share,
-                    ),
-                    _capabilityTile(
-                      theme,
-                      'Flashlight',
-                      'Toggle device torch on/off',
-                      Icons.flashlight_on,
-                    ),
-                    _capabilityTile(
-                      theme,
-                      'Vibration',
-                      'Trigger haptic feedback and vibration patterns',
-                      Icons.vibration,
-                    ),
-                    _capabilityTile(
-                      theme,
-                      'Sensors',
-                      'Read accelerometer, gyroscope, magnetometer, barometer',
-                      Icons.sensors,
-                    ),
-                    _capabilityTile(
-                      theme,
-                      'Serial',
-                      'Bluetooth and USB serial communication',
-                      Icons.usb,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Device Info
-                    if (state.deviceId != null) ...[
-                      _sectionHeader(theme, 'DEVICE INFO'),
-                      ListTile(
-                        title: const Text('Device ID'),
-                        subtitle: SelectableText(
-                          state.deviceId!,
-                          style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-                        ),
-                        leading: const Icon(Icons.fingerprint),
-                      ),
-                    ],
-                    const SizedBox(height: 16),
-
-                    // Logs
-                    _sectionHeader(theme, 'NODE LOGS'),
-                    Card(
-                      child: Container(
-                        height: 200,
-                        padding: const EdgeInsets.all(12),
-                        child: state.logs.isEmpty
-                            ? Center(
-                                child: Text(
-                                  'No logs yet',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
+                      if (state.pairingCode != null) ...[
+                        _sectionHeader(theme, AppStrings.pairing),
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              children: [
+                                const Icon(Icons.qr_code, size: 48),
+                                const SizedBox(height: 8),
+                                Text(AppStrings.pairingPrompt,
+                                    style: theme.textTheme.bodyMedium),
+                                const SizedBox(height: 8),
+                                SelectableText(
+                                  state.pairingCode!,
+                                  style:
+                                      theme.textTheme.headlineMedium?.copyWith(
+                                    fontFamily: 'monospace',
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.primary,
                                   ),
                                 ),
-                              )
-                            : ListView.builder(
-                                reverse: true,
-                                itemCount: state.logs.length,
-                                itemBuilder: (context, index) {
-                                  final log = state.logs[state.logs.length - 1 - index];
-                                  return Text(
-                                    log,
-                                    style: const TextStyle(
-                                      fontFamily: 'monospace',
-                                      fontSize: 11,
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      _sectionHeader(theme, AppStrings.capabilities),
+                      _capabilityTile(theme, AppStrings.capCamera,
+                          AppStrings.capCameraDesc, Icons.camera_alt),
+                      _capabilityTile(theme, AppStrings.capCanvas,
+                          AppStrings.capCanvasDesc, Icons.web,
+                          available: false),
+                      _capabilityTile(theme, AppStrings.capLocation,
+                          AppStrings.capLocationDesc, Icons.location_on),
+                      _capabilityTile(theme, AppStrings.capScreen,
+                          AppStrings.capScreenDesc, Icons.screen_share),
+                      _capabilityTile(theme, AppStrings.capFlash,
+                          AppStrings.capFlashDesc, Icons.flashlight_on),
+                      _capabilityTile(theme, AppStrings.capVibration,
+                          AppStrings.capVibrationDesc, Icons.vibration),
+                      _capabilityTile(theme, AppStrings.capSensors,
+                          AppStrings.capSensorsDesc, Icons.sensors),
+                      _capabilityTile(theme, AppStrings.capSerial,
+                          AppStrings.capSerialDesc, Icons.usb),
+                      const SizedBox(height: 16),
+                      if (state.deviceId != null) ...[
+                        _sectionHeader(theme, AppStrings.deviceInfo),
+                        ListTile(
+                          title: Text(AppStrings.deviceId),
+                          subtitle: SelectableText(
+                            state.deviceId!,
+                            style: const TextStyle(
+                                fontFamily: 'monospace', fontSize: 12),
+                          ),
+                          leading: const Icon(Icons.fingerprint),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      _sectionHeader(theme, AppStrings.nodeLogs),
+                      Card(
+                        child: Container(
+                          height: 200,
+                          padding: const EdgeInsets.all(12),
+                          child: state.logs.isEmpty
+                              ? Center(
+                                  child: Text(
+                                    AppStrings.noLogsYetNode,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
                                     ),
-                                  );
-                                },
-                              ),
+                                  ),
+                                )
+                              : ListView.builder(
+                                  reverse: true,
+                                  itemCount: state.logs.length,
+                                  itemBuilder: (context, index) {
+                                    final log = state
+                                        .logs[state.logs.length - 1 - index];
+                                    return Text(log,
+                                        style: const TextStyle(
+                                            fontFamily: 'monospace',
+                                            fontSize: 11));
+                                  },
+                                ),
+                        ),
                       ),
-                    ),
-                  ],
-                );
-              },
+                    ],
+                  );
+                },
+              ),
             ),
     );
   }
@@ -300,16 +259,9 @@ class _NodeScreenState extends State<NodeScreen> {
         title: Text(title),
         subtitle: Text(subtitle),
         trailing: available
-            ? const Icon(
-                Icons.check_circle,
-                color: AppColors.statusGreen,
-                size: 20,
-              )
-            : const Icon(
-                Icons.block,
-                color: AppColors.statusAmber,
-                size: 20,
-              ),
+            ? const Icon(Icons.check_circle,
+                color: AppColors.statusGreen, size: 20)
+            : const Icon(Icons.block, color: AppColors.statusAmber, size: 20),
       ),
     );
   }

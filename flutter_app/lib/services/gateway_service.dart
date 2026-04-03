@@ -197,7 +197,7 @@ fs.writeFileSync(p, JSON.stringify(c, null, 2));
     }
   }
 
-  /// Repair openclaw.json on disk â€” fixes corrupted model entries and ensures
+  /// Repair openclaw.json on disk â€?fixes corrupted model entries and ensures
   /// gateway.mode=local is set. Called on init() before any gateway start (#88).
   Future<void> _repairConfigFile() async {
     try {
@@ -211,7 +211,7 @@ fs.writeFileSync(p, JSON.stringify(c, null, 2));
       try {
         config = Map<String, dynamic>.from(jsonDecode(content) as Map);
       } catch (_) {
-        return; // Unparseable â€” _writeNodeAllowConfig will recreate it
+        return; // Unparseable â€?_writeNodeAllowConfig will recreate it
       }
 
       bool modified = false;
@@ -224,7 +224,7 @@ fs.writeFileSync(p, JSON.stringify(c, null, 2));
         modified = true;
       }
 
-      // Fix model entries: strings â†’ objects (#83, #88)
+      // Fix model entries: strings â†?objects (#83, #88)
       final models = config['models'] as Map<String, dynamic>?;
       if (models != null) {
         final providers = models['providers'] as Map<String, dynamic>?;
@@ -273,7 +273,7 @@ fs.writeFileSync(p, JSON.stringify(c, null, 2));
   }
 
   /// Read the actual gateway auth token from openclaw.json config file (#74, #82).
-  /// This is the source of truth â€” more reliable than regex-scraping stdout.
+  /// This is the source of truth â€?more reliable than regex-scraping stdout.
   Future<String?> _readTokenFromConfig() async {
     try {
       final raw = await NativeBridge.readRootfsFile('root/.openclaw/openclaw.json');
@@ -309,7 +309,7 @@ fs.writeFileSync(p, JSON.stringify(c, null, 2));
     ));
 
     try {
-      // Ensure directories exist â€” Android may have cleared them (#40).
+      // Ensure directories exist â€?Android may have cleared them (#40).
       // Non-fatal: the GatewayService foreground service also creates them.
       try { await NativeBridge.setupDirs(); } catch (_) {}
       try { await NativeBridge.writeResolv(); } catch (_) {}
@@ -374,7 +374,7 @@ fs.writeFileSync(p, JSON.stringify(c, null, 2));
 
   void _startHealthCheck() {
     _cancelAllTimers();
-    // Delay the first health check by 30s â€” Node.js inside proot needs time to start.
+    // Delay the first health check by 30s â€?Node.js inside proot needs time to start.
     // Use a Timer (not Future.delayed) so it can be cancelled on stop().
     _initialDelayTimer = Timer(const Duration(seconds: 30), () {
       _initialDelayTimer = null;
@@ -394,7 +394,7 @@ fs.writeFileSync(p, JSON.stringify(c, null, 2));
           .timeout(const Duration(seconds: 3));
 
       if (response.statusCode < 500 && _state.status != GatewayStatus.running) {
-        // Read the actual token from openclaw.json â€” source of truth (#74, #82).
+        // Read the actual token from openclaw.json â€?source of truth (#74, #82).
         // This ensures the displayed token always matches the gateway's config,
         // even if the stdout regex didn't capture it.
         String? configUrl = _state.dashboardUrl;

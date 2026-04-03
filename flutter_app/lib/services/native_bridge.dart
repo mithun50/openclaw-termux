@@ -35,7 +35,8 @@ class NativeBridge {
   }
 
   static Future<String> runInProot(String command, {int timeout = 900}) async {
-    return await _channel.invokeMethod('runInProot', {'command': command, 'timeout': timeout});
+    return await _channel
+        .invokeMethod('runInProot', {'command': command, 'timeout': timeout});
   }
 
   static Future<bool> startGateway() async {
@@ -67,11 +68,13 @@ class NativeBridge {
   }
 
   static Future<bool> extractNodeTarball(String tarPath) async {
-    return await _channel.invokeMethod('extractNodeTarball', {'tarPath': tarPath});
+    return await _channel
+        .invokeMethod('extractNodeTarball', {'tarPath': tarPath});
   }
 
   static Future<bool> createBinWrappers(String packageName) async {
-    return await _channel.invokeMethod('createBinWrappers', {'packageName': packageName});
+    return await _channel
+        .invokeMethod('createBinWrappers', {'packageName': packageName});
   }
 
   static Future<bool> startTerminalService() async {
@@ -84,6 +87,18 @@ class NativeBridge {
 
   static Future<bool> isTerminalServiceRunning() async {
     return await _channel.invokeMethod('isTerminalServiceRunning');
+  }
+
+  static Future<bool> startNineRouterService() async {
+    return await _channel.invokeMethod('startNineRouterService');
+  }
+
+  static Future<bool> stopNineRouterService() async {
+    return await _channel.invokeMethod('stopNineRouterService');
+  }
+
+  static Future<bool> isNineRouterServiceRunning() async {
+    return await _channel.invokeMethod('isNineRouterServiceRunning');
   }
 
   static Future<bool> startNodeService() async {
@@ -104,7 +119,8 @@ class NativeBridge {
   }
 
   static Future<bool> updateNodeNotification(String text) async {
-    return await _channel.invokeMethod('updateNodeNotification', {'text': text});
+    return await _channel
+        .invokeMethod('updateNodeNotification', {'text': text});
   }
 
   static Future<bool> requestBatteryOptimization() async {
@@ -119,24 +135,31 @@ class NativeBridge {
     return await _channel.invokeMethod('startSetupService');
   }
 
-  static Future<bool> updateSetupNotification(String text, {int progress = -1}) async {
-    return await _channel.invokeMethod('updateSetupNotification', {'text': text, 'progress': progress});
+  static Future<bool> updateSetupNotification(String text,
+      {int progress = -1}) async {
+    return await _channel.invokeMethod(
+        'updateSetupNotification', {'text': text, 'progress': progress});
   }
 
   static Future<bool> stopSetupService() async {
     return await _channel.invokeMethod('stopSetupService');
   }
 
-  static Future<bool> showUrlNotification(String url, {String title = 'URL Detected'}) async {
-    return await _channel.invokeMethod('showUrlNotification', {'url': url, 'title': title});
+  static Future<bool> showUrlNotification(String url,
+      {String title = 'URL Detected'}) async {
+    return await _channel
+        .invokeMethod('showUrlNotification', {'url': url, 'title': title});
   }
 
   static Stream<String> get gatewayLogStream {
-    return _eventChannel.receiveBroadcastStream().map((event) => event.toString());
+    return _eventChannel
+        .receiveBroadcastStream()
+        .map((event) => event.toString());
   }
 
   static Future<String?> requestScreenCapture(int durationMs) async {
-    return await _channel.invokeMethod('requestScreenCapture', {'durationMs': durationMs});
+    return await _channel
+        .invokeMethod('requestScreenCapture', {'durationMs': durationMs});
   }
 
   static Future<bool> stopScreenCapture() async {
@@ -160,7 +183,8 @@ class NativeBridge {
   }
 
   static Future<bool> writeRootfsFile(String path, String content) async {
-    return await _channel.invokeMethod('writeRootfsFile', {'path': path, 'content': content});
+    return await _channel
+        .invokeMethod('writeRootfsFile', {'path': path, 'content': content});
   }
 
   // SSH Service
@@ -190,6 +214,7 @@ class NativeBridge {
   }
 
   static Future<bool> setRootPassword(String password) async {
-    return await _channel.invokeMethod('setRootPassword', {'password': password});
+    return await _channel
+        .invokeMethod('setRootPassword', {'password': password});
   }
 }

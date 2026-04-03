@@ -34,7 +34,7 @@ class FlashCapability extends CapabilityHandler {
       if (_controller!.value.isInitialized && !_controller!.value.hasError) {
         return _controller!;
       }
-      // Controller is stale/errored â€” dispose and recreate
+      // Controller is stale/errored â€?dispose and recreate
       try { _controller!.dispose(); } catch (_) {}
       _controller = null;
     }

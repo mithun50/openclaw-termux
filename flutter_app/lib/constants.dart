@@ -31,7 +31,7 @@ class AppConstants {
   static const String rootfsArmhf = '${ubuntuRootfsUrl}armhf.tar.gz';
   static const String rootfsAmd64 = '${ubuntuRootfsUrl}amd64.tar.gz';
 
-  // Node.js binary tarball â€” downloaded directly by Flutter, extracted by Java.
+  // Node.js binary tarball â€?downloaded directly by Flutter, extracted by Java.
   // Bypasses curl/gpg/NodeSource which fail inside proot.
   static const String nodeVersion = '22.14.0';
   static const String nodeBaseUrl =

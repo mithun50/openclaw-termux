@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
+import '../l10n/app_strings.dart';
 import '../services/native_bridge.dart';
 import '../services/preferences_service.dart';
 import 'setup_wizard_screen.dart';
@@ -18,7 +19,7 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  String _status = 'Loading...';
+  String _status = AppStrings.loading;
   late final AnimationController _fadeController;
   late final Animation<double> _fadeAnimation;
 
@@ -47,7 +48,7 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 500));
 
     try {
-      setState(() => _status = 'Checking setup status...');
+      setState(() => _status = AppStrings.checkingSetup);
 
       // Ensure directories and resolv.conf exist on every app open.
       // Android may clear the files directory during update or reinstall (#40).
@@ -126,17 +127,17 @@ class _SplashScreenState extends State<SplashScreen>
           final openclawOk = status['openclawInstalled'] == true;
           final bypassOk = status['bypassInstalled'] == true;
 
-          // Core rootfs must exist â€” can't repair without it
+          // Core rootfs must exist â€?can't repair without it
           if (rootfsOk && bashOk) {
             // Regenerate bionic bypass if missing
             if (!bypassOk) {
-              setState(() => _status = 'Repairing bionic bypass...');
+              setState(() => _status = AppStrings.repairingBypass);
               await NativeBridge.installBionicBypass();
             }
 
             // Reinstall node if binary is missing (#97)
             if (!nodeOk) {
-              setState(() => _status = 'Reinstalling Node.js...');
+              setState(() => _status = AppStrings.reinstallingNode);
               try {
                 final arch = await NativeBridge.getArch();
                 final nodeTarUrl = AppConstants.getNodeTarballUrl(arch);
@@ -150,7 +151,7 @@ class _SplashScreenState extends State<SplashScreen>
 
             // Reinstall openclaw if package.json is missing (#97)
             if (!openclawOk && nodeOk) {
-              setState(() => _status = 'Reinstalling OpenClaw...');
+              setState(() => _status = AppStrings.reinstallingOpenClaw);
               try {
                 const wrapper = '/root/.openclaw/node-wrapper.js';
                 const nodeRun = 'node $wrapper';
@@ -213,7 +214,7 @@ class _SplashScreenState extends State<SplashScreen>
               ),
               const SizedBox(height: 8),
               Text(
-                'AI Gateway for Android',
+                AppStrings.aiGatewayForAndroid,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),

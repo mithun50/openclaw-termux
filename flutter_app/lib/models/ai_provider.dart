@@ -26,7 +26,7 @@ class AiProvider {
   static const anthropic = AiProvider(
     id: 'anthropic',
     name: 'Anthropic',
-    description: 'Claude models — advanced reasoning and coding',
+    description: 'Claude models �?advanced reasoning and coding',
     icon: Icons.psychology,
     color: Color(0xFFD97706),
     baseUrl: 'https://api.anthropic.com/v1',
@@ -133,6 +133,30 @@ class AiProvider {
     apiKeyHint: 'xai-...',
   );
 
+  static const custom = AiProvider(
+    id: 'custom',
+    name: 'Custom / CLIProxy',
+    description: 'Any OpenAI-compatible API (e.g. CLIProxy on port 18790)',
+    icon: Icons.tune,
+    color: Color(0xFF8B5CF6),
+    baseUrl: 'http://127.0.0.1:18790/v1',
+    defaultModels: [
+      'claude-sonnet-4-20250514',
+      'gemini-2.5-pro',
+      'gpt-4o',
+    ],
+    apiKeyHint: 'your-api-key (or any string if not required)',
+  );
+
   /// All available AI providers.
-  static const all = [anthropic, openai, google, openrouter, nvidia, deepseek, xai];
+  static const all = [
+    anthropic,
+    openai,
+    google,
+    openrouter,
+    nvidia,
+    deepseek,
+    xai,
+    custom
+  ];
 }

@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../app.dart';
+import '../l10n/app_strings.dart';
 import '../models/node_state.dart';
 import '../providers/node_provider.dart';
 import '../screens/node_screen.dart';
@@ -26,7 +27,7 @@ class NodeControls extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        'Node',
+                        AppStrings.node,
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -78,20 +79,20 @@ class NodeControls extends StatelessWidget {
                       FilledButton.icon(
                         onPressed: () => provider.enable(),
                         icon: const Icon(Icons.power_settings_new),
-                        label: const Text('Enable Node'),
+                        label: Text(AppStrings.enableNode),
                       ),
                     if (!state.isDisabled) ...[
                       OutlinedButton.icon(
                         onPressed: () => provider.disable(),
                         icon: const Icon(Icons.stop),
-                        label: const Text('Disable Node'),
+                        label: Text(AppStrings.disableNode),
                       ),
                       if (state.status == NodeStatus.error ||
                           state.status == NodeStatus.disconnected)
                         OutlinedButton.icon(
                           onPressed: () => provider.reconnect(),
                           icon: const Icon(Icons.refresh),
-                          label: const Text('Reconnect'),
+                          label: Text(AppStrings.reconnect),
                         ),
                     ],
                     OutlinedButton.icon(
@@ -99,7 +100,7 @@ class NodeControls extends StatelessWidget {
                         MaterialPageRoute(builder: (_) => const NodeScreen()),
                       ),
                       icon: const Icon(Icons.settings),
-                      label: const Text('Configure'),
+                      label: Text(AppStrings.nodeConfigure),
                     ),
                   ],
                 ),
@@ -119,25 +120,25 @@ class NodeControls extends StatelessWidget {
     switch (status) {
       case NodeStatus.paired:
         color = AppColors.statusGreen;
-        label = 'Paired';
+        label = AppStrings.nodePaired;
         icon = Icons.check_circle_outline;
       case NodeStatus.connecting:
       case NodeStatus.challenging:
       case NodeStatus.pairing:
         color = AppColors.statusAmber;
-        label = 'Connecting';
+        label = AppStrings.nodeConnecting;
         icon = Icons.hourglass_top;
       case NodeStatus.error:
         color = AppColors.statusRed;
-        label = 'Error';
+        label = AppStrings.gatewayError;
         icon = Icons.error_outline;
       case NodeStatus.disabled:
         color = AppColors.statusGrey;
-        label = 'Disabled';
+        label = AppStrings.nodeDisabled;
         icon = Icons.circle_outlined;
       case NodeStatus.disconnected:
         color = AppColors.statusGrey;
-        label = 'Disconnected';
+        label = AppStrings.nodeDisconnected;
         icon = Icons.link_off;
     }
 
