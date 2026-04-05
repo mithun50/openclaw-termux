@@ -171,7 +171,9 @@ class NodeService {
           return token;
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      _log('[NODE] Could not read token from openclaw.json: $e');
+    }
 
     _log('[NODE] No gateway token available');
     return null;
