@@ -101,12 +101,13 @@ class GatewayService {
   void _subscribeLogs() {
     _logSubscription?.cancel();
     _logSubscription = NativeBridge.gatewayLogStream.listen((log) {
-      final logs = [..._state.logs, log];
+      final sanitizedLog = log.replaceAll(AppConstants.ansiEscape, '');
+      final logs = [..._state.logs, sanitizedLog];
       if (logs.length > 500) {
         logs.removeRange(0, logs.length - 500);
       }
       String? dashboardUrl;
-      final cleanLog = _cleanForUrl(log);
+      final cleanLog = _cleanForUrl(sanitizedLog);
       final urlMatch = _tokenUrlRegex.firstMatch(cleanLog);
       if (urlMatch != null) {
         dashboardUrl = urlMatch.group(0);
