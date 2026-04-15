@@ -22,6 +22,17 @@ class _SplashScreenState extends State<SplashScreen>
   late final AnimationController _fadeController;
   late final Animation<double> _fadeAnimation;
 
+  String _shellQuote(String value) => "'${value.replaceAll("'", r"'\''")}'";
+
+  String _openclawInstallCommand(String nodeRun, String npmCli) {
+    if (AppConstants.openclawTgzUrl.isEmpty) {
+      return '$nodeRun $npmCli install -g ${AppConstants.openclawNpmPackage}';
+    }
+    final tgz = _shellQuote(AppConstants.openclawTgzUrl);
+    return '$nodeRun $npmCli install -g $tgz || '
+        '$nodeRun $npmCli install -g ${AppConstants.openclawNpmPackage}';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -156,7 +167,7 @@ class _SplashScreenState extends State<SplashScreen>
                 const nodeRun = 'node $wrapper';
                 const npmCli = '/usr/local/lib/node_modules/npm/bin/npm-cli.js';
                 await NativeBridge.runInProot(
-                  '$nodeRun $npmCli install -g openclaw',
+                  _openclawInstallCommand(nodeRun, npmCli),
                   timeout: 1800,
                 );
                 await NativeBridge.createBinWrappers('openclaw');

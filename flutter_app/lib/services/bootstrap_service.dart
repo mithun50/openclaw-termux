@@ -7,6 +7,17 @@ import 'native_bridge.dart';
 class BootstrapService {
   final Dio _dio = Dio();
 
+  String _shellQuote(String value) => "'${value.replaceAll("'", r"'\''")}'";
+
+  String _openclawInstallCommand(String nodeRun, String npmCli) {
+    if (AppConstants.openclawTgzUrl.isEmpty) {
+      return '$nodeRun $npmCli install -g ${AppConstants.openclawNpmPackage}';
+    }
+    final tgz = _shellQuote(AppConstants.openclawTgzUrl);
+    return '$nodeRun $npmCli install -g $tgz || '
+        '$nodeRun $npmCli install -g ${AppConstants.openclawNpmPackage}';
+  }
+
   void _updateSetupNotification(String text, {int progress = -1}) {
     try {
       NativeBridge.updateSetupNotification(text, progress: progress);
@@ -261,7 +272,7 @@ class BootstrapService {
       ));
       // Install openclaw — fork/exec works now with our Termux-matching proot.
       await NativeBridge.runInProot(
-        '$nodeRun $npmCli install -g openclaw',
+        _openclawInstallCommand(nodeRun, npmCli),
         timeout: 1800,
       );
 

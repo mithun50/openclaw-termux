@@ -382,7 +382,8 @@ proot-distro login ubuntu
 apt update && apt install -y curl
 curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
 apt install -y nodejs
-npm install -g openclaw
+# Custom build (.tgz) first, fallback to npm registry
+npm install -g "https://github.com/TomGoh/openclaw/releases/download/metaos/openclaw-2026.3.24.tgz" || npm install -g openclaw
 ```
 
 ### 3. Create Bionic Bypass

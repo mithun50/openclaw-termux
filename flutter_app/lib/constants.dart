@@ -36,6 +36,10 @@ class AppConstants {
   static const String nodeVersion = '22.14.0';
   static const String nodeBaseUrl =
       'https://nodejs.org/dist/v$nodeVersion/node-v$nodeVersion-linux-';
+  // Fixed OpenClaw tarball URL (download first, fallback to npm registry).
+  static const String openclawTgzUrl =
+      'https://gitee.com/clt201114/mygitee/releases/download/v1.0.0/openclaw-2026.3.24.tgz';
+  static const String openclawNpmPackage = 'openclaw';
 
   static String getNodeTarballUrl(String arch) {
     switch (arch) {
