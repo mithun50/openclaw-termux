@@ -42,7 +42,7 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
           provider: provider,
           existingApiKey: providerConfig?['apiKey'] as String?,
           existingBaseUrl: providerConfig?['baseUrl'] as String?,
-          existingModel: _activeModel,
+          existingModel: providerConfig?['model'] as String? ?? _activeModel,
         ),
       ),
     );

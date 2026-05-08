@@ -11,9 +11,20 @@ class ProviderConfigService {
     return "'${s.replaceAll("'", "'\\''")}'";
   }
 
+  static String? _extractPrimaryModel(dynamic modelsRaw) {
+    if (modelsRaw is! List || modelsRaw.isEmpty) return null;
+    final first = modelsRaw.first;
+    if (first is String) return first;
+    if (first is Map) {
+      final id = first['id'];
+      if (id is String && id.isNotEmpty) return id;
+    }
+    return null;
+  }
+
   /// Read the current config and return a map with:
   /// - `activeModel`: the current primary model string (or null)
-  /// - `providers`: Map<providerId, {apiKey, model}> for configured providers
+  /// - `providers`: Map<providerId, {apiKey, baseUrl, model, ...}> for configured providers
   static Future<Map<String, dynamic>> readConfig() async {
     try {
       final content = await NativeBridge.readRootfsFile(_configPath);
@@ -42,7 +53,11 @@ class ProviderConfigService {
         final providerEntries = modelsSection['providers'] as Map<String, dynamic>?;
         if (providerEntries != null) {
           for (final entry in providerEntries.entries) {
-            providers[entry.key] = entry.value;
+            if (entry.value is Map) {
+              final normalized = Map<String, dynamic>.from(entry.value as Map);
+              normalized['model'] = _extractPrimaryModel(normalized['models']);
+              providers[entry.key] = normalized;
+            }
           }
         }
       }
