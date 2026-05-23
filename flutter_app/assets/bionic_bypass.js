@@ -8,7 +8,7 @@ os.networkInterfaces = function() {
     if (interfaces && Object.keys(interfaces).length > 0) {
       return interfaces;
     }
-  } catch (e) {
+  } catch {
     // Bionic blocked the call, use fallback
   }
 

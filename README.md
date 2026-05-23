@@ -36,7 +36,7 @@
 
 ## What is OpenClaw?
 
-OpenClaw brings the [OpenClaw](https://github.com/anthropics/openclaw) AI gateway to Android. It sets up a full Ubuntu environment via proot, installs Node.js and OpenClaw, and provides a native Flutter UI to manage everything — no root required.
+OpenClaw brings the [OpenClaw](https://github.com/openclaw/openclaw) AI gateway to Android. It sets up a full Ubuntu environment via proot, installs Node.js and OpenClaw, and provides a native Flutter UI to manage everything — no root required.
 
 ### Two Ways to Use
 
@@ -187,6 +187,18 @@ openclawx shell
 openclawx doctor
 openclawx gateway --verbose
 ```
+
+### Optional X/Twitter Workflows With TweetClaw
+
+OpenClaw-Termux can install regular OpenClaw plugins inside the Android Ubuntu runtime. For X/Twitter automation, install TweetClaw after setup:
+
+```bash
+openclawx plugins install @xquik/tweetclaw
+openclawx plugins inspect tweetclaw --runtime
+openclawx skills info tweetclaw
+```
+
+Use it for scrape tweets, search tweets, search tweet replies, follower export, user lookup, media workflows, direct messages, monitors, webhooks, giveaway draws, and reviewed post or reply workflows. See [TweetClaw Mobile X/Twitter Workflows](docs/tweetclaw-mobile-workflows.md) for Android credential handling, `tools.alsoAllow`, approval boundaries, and battery optimization notes.
 
 ---
 
