@@ -133,6 +133,28 @@ class AiProvider {
     apiKeyHint: 'xai-...',
   );
 
+  static const minimax = AiProvider(
+    id: 'minimax',
+    name: 'MiniMax',
+    description: 'MiniMax models with long-context reasoning',
+    icon: Icons.all_inclusive,
+    color: Color(0xFF8B5CF6),
+    baseUrl: 'https://api.minimax.io/v1',
+    defaultModels: [
+      'MiniMax-M3',
+    ],
+    apiKeyHint: 'sk-...',
+  );
+
   /// All available AI providers.
-  static const all = [anthropic, openai, google, openrouter, nvidia, deepseek, xai];
+  static const all = [
+    anthropic,
+    openai,
+    google,
+    openrouter,
+    nvidia,
+    deepseek,
+    xai,
+    minimax,
+  ];
 }
