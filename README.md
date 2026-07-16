@@ -26,7 +26,7 @@
 </p>
 
 <p align="center">
-  <a href="https://bloome.im/agent/join/0qrf0mWD?ref=TPKB3AAW">
+  <a href="https://bloome.im/app?ref=TPKB3AAW&utm_medium=github&utm_source=mithun50-openclaw-termux-ivor-202606">
     <img src="https://img.shields.io/badge/Try%20Bloome-Join%20Now-blue?style=for-the-badge&logo=robot" alt="Try Bloome"/>
   </a>
 </p>
