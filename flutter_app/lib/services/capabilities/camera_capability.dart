@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -8,6 +9,12 @@ import 'capability_handler.dart';
 
 class CameraCapability extends CapabilityHandler {
   List<CameraDescription>? _cameras;
+  
+  // Record the camera file generated during this session (unique ID+path)
+  // Ensure that only files created by oneself are deleted during deletion to avoid accidentally deleting user albums
+  /**Fixed since March 22, 2026
+  submitter：wuchenxiuwu */
+  final List<Map<String, String>> _cameraFiles = [];
 
   @override
   String get name => 'camera';
@@ -83,28 +90,49 @@ class CameraCapability extends CapabilityHandler {
     }
   }
 
+  // Generate a unique ID (timestamp+random number)
+  String _generateId() {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final random = Random().nextInt(1000000);
+    return '${now}_$random';
+  }
+
   Future<NodeFrame> _snap(Map<String, dynamic> params) async {
     CameraController? controller;
+    String? fileId;
     try {
       final facing = params['facing'] as String?;
       controller = await _createController(facing: facing);
 
-      // Brief settle time for auto-exposure/focus
       await Future.delayed(const Duration(milliseconds: 500));
 
       final file = await controller.takePicture();
-      final bytes = await File(file.path).readAsBytes();
+      final path = file.path;
+
+      // Record the files generated this time in the inventory
+      fileId = _generateId();
+      _cameraFiles.add({'id': fileId, 'path': path});
+
+      final bytes = await File(path).readAsBytes();
       final b64 = base64Encode(bytes);
 
-      // Get image dimensions
       final codec = await ui.instantiateImageCodec(bytes);
       final frame = await codec.getNextFrame();
       final width = frame.image.width;
       final height = frame.image.height;
       frame.image.dispose();
 
-      // Clean up temp file
-      await File(file.path).delete().catchError((_) => File(file.path));
+      // Only delete files when they are on the list to prevent accidental deletion of the album
+      final index = _cameraFiles.indexWhere((item) => item['id'] == fileId && item['path'] == path);
+      if (index != -1) {
+        try {
+          await File(path).delete();
+          _cameraFiles.removeAt(index);
+        } catch (_) {
+          // Keep tracking entry so dispose() can retry cleanup later.
+        }
+      }
+
       return NodeFrame.response('', payload: {
         'base64': b64,
         'format': 'jpg',
@@ -112,18 +140,22 @@ class CameraCapability extends CapabilityHandler {
         'height': height,
       });
     } catch (e) {
+      //Clean up records in the inventory when errors occur to avoid residue
+      if (fileId != null) {
+        _cameraFiles.removeWhere((item) => item['id'] == fileId);
+      }
       return NodeFrame.response('', error: {
         'code': 'CAMERA_ERROR',
         'message': '$e',
       });
     } finally {
-      // Always release the camera
       await controller?.dispose();
     }
   }
 
   Future<NodeFrame> _clip(Map<String, dynamic> params) async {
     CameraController? controller;
+    String? fileId;
     try {
       final durationMs = params['durationMs'] as int? ?? 5000;
       final facing = params['facing'] as String?;
@@ -131,9 +163,22 @@ class CameraCapability extends CapabilityHandler {
       await controller.startVideoRecording();
       await Future.delayed(Duration(milliseconds: durationMs));
       final file = await controller.stopVideoRecording();
-      final bytes = await File(file.path).readAsBytes();
+      final path = file.path;
+
+      //Record the files generated this time in the inventory
+      fileId = _generateId();
+      _cameraFiles.add({'id': fileId, 'path': path});
+
+      final bytes = await File(path).readAsBytes();
       final b64 = base64Encode(bytes);
-      await File(file.path).delete().catchError((_) => File(file.path));
+
+      //Only delete files when they are on the list to prevent accidental deletion of user albums
+      final index = _cameraFiles.indexWhere((item) => item['id'] == fileId && item['path'] == path);
+      if (index != -1) {
+        _cameraFiles.removeAt(index);
+        await File(path).delete().catchError((_) => File(path));
+      }
+
       return NodeFrame.response('', payload: {
         'base64': b64,
         'format': 'mp4',
@@ -141,17 +186,29 @@ class CameraCapability extends CapabilityHandler {
         'hasAudio': false,
       });
     } catch (e) {
+      //Clean up records in the inventory when errors occur to avoid residue
+      if (fileId != null) {
+        _cameraFiles.removeWhere((item) => item['id'] == fileId);
+      }
       return NodeFrame.response('', error: {
         'code': 'CAMERA_ERROR',
         'message': '$e',
       });
     } finally {
-      // Always release the camera
       await controller?.dispose();
     }
   }
 
+  //Clean up all undeleted temporary files when the application exits
   void dispose() {
-    // No persistent controller to clean up anymore
+    for (final item in _cameraFiles) {
+      final path = item['path'];
+      if (path != null) {
+        try {
+          File(path).deleteSync();
+        } catch (_) {}
+      }
+    }
+    _cameraFiles.clear();
   }
 }
