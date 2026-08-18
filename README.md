@@ -501,7 +501,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ---
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=mithun50/openclaw-termux&type=Date)](https://star-history.com/#mithun50/openclaw-termux&Date)
+[![Star History Chart](https://star-history.dera.page/svg?repos=mithun50/openclaw-termux&type=Date)](https://star-history.dera.page/#mithun50/openclaw-termux&Date)
 
 
 <p align="center">
