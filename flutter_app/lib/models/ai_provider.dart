@@ -142,6 +142,7 @@ class AiProvider {
     baseUrl: 'https://api.minimax.io/v1',
     defaultModels: [
       'MiniMax-M3',
+      'MiniMax-M2.7',
     ],
     apiKeyHint: 'sk-...',
   );
