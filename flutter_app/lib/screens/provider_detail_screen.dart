@@ -8,12 +8,14 @@ class ProviderDetailScreen extends StatefulWidget {
   final AiProvider provider;
   final String? existingApiKey;
   final String? existingModel;
+  final String? existingBaseUrl;
 
   const ProviderDetailScreen({
     super.key,
     required this.provider,
     this.existingApiKey,
     this.existingModel,
+    this.existingBaseUrl,
   });
 
   @override
@@ -24,6 +26,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
   static const _customModelSentinel = '__custom__';
 
   late final TextEditingController _apiKeyController;
+  late final TextEditingController _baseUrlController;
   late final TextEditingController _customModelController;
   late String _selectedModel;
   bool _isCustomModel = false;
@@ -41,6 +44,9 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
   void initState() {
     super.initState();
     _apiKeyController = TextEditingController(text: widget.existingApiKey ?? '');
+    _baseUrlController = TextEditingController(
+      text: widget.existingBaseUrl ?? widget.provider.baseUrl,
+    );
     _customModelController = TextEditingController();
 
     final existing = widget.existingModel ?? widget.provider.defaultModels.first;
@@ -57,6 +63,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
   @override
   void dispose() {
     _apiKeyController.dispose();
+    _baseUrlController.dispose();
     _customModelController.dispose();
     super.dispose();
   }
@@ -66,6 +73,13 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
     if (apiKey.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('API key cannot be empty')),
+      );
+      return;
+    }
+    final baseUrl = _baseUrlController.text.trim();
+    if (baseUrl.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('API URL cannot be empty')),
       );
       return;
     }
@@ -82,6 +96,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
       await ProviderConfigService.saveProviderConfig(
         provider: widget.provider,
         apiKey: apiKey,
+        baseUrl: baseUrl,
         model: model,
       );
       if (mounted) {
@@ -210,6 +225,20 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
                 icon: Icon(_obscureKey ? Icons.visibility_off : Icons.visibility),
                 onPressed: () => setState(() => _obscureKey = !_obscureKey),
               ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // API URL
+          Text(
+            'API URL',
+            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _baseUrlController,
+            decoration: const InputDecoration(
+              hintText: 'https://api.example.com/v1',
             ),
           ),
           const SizedBox(height: 24),
