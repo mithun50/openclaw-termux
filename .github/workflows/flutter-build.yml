@@ -303,36 +303,69 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Build release notes
+        if: steps.version.outputs.exists == 'false'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Pull this version's section out of CHANGELOG.md so the release notes
+          # describe what actually changed. Previously every release shipped the
+          # same static boilerplate, which is why users could not tell releases
+          # apart and had to ask in issues.
+          awk -v hdr="## v${VERSION}" '
+            index($0, hdr) == 1 { flag = 1; next }
+            /^## v/ { if (flag) exit }
+            flag { print }
+          ' CHANGELOG.md > changelog-section.md
+
+          {
+            echo "## OpenClaw Android v${VERSION}"
+            echo ""
+            echo "Standalone Android app, no Termux required."
+            echo ""
+            if [ -s changelog-section.md ]; then
+              cat changelog-section.md
+            else
+              echo "See [CHANGELOG.md](https://github.com/${GITHUB_REPOSITORY}/blob/main/CHANGELOG.md)."
+            fi
+            echo "### Downloads"
+            echo ""
+            echo "| File | Description |"
+            echo "|------|-------------|"
+            echo "| \`OpenClaw-v${VERSION}-arm64-v8a.apk\` | Most modern Android phones (recommended) |"
+            echo "| \`OpenClaw-v${VERSION}-armeabi-v7a.apk\` | Older 32-bit ARM devices |"
+            echo "| \`OpenClaw-v${VERSION}-x86_64.apk\` | Emulators / x86 devices |"
+            echo "| \`OpenClaw-v${VERSION}-universal.apk\` | All architectures (larger) |"
+            echo "| \`OpenClaw-v${VERSION}.aab\` | Android App Bundle (Play Store) |"
+            echo ""
+            echo "### First run"
+            echo ""
+            echo "1. Install the APK."
+            echo "2. Follow the setup wizard. It downloads roughly 500MB (Ubuntu rootfs plus Node.js)."
+            echo "3. Configure your API keys in **Onboarding**, or add a provider under **AI Providers**."
+            echo "4. Tap **Start Gateway** on the dashboard."
+            echo "5. Open the tokenised dashboard URL shown on the dashboard card. The gateway listens on port 18789 by default, or whatever you set as \`gateway.port\`."
+            echo ""
+            echo "Upgrading keeps your rootfs and config. Install over the top; do not uninstall first, or you will lose the environment and your settings."
+            echo ""
+            echo "### Requirements"
+            echo ""
+            echo "- Android 10 or higher (API 29)"
+            echo "- Roughly 500MB free storage for the initial setup"
+            echo "- An internet connection for first-time setup"
+            echo "- Battery optimisation disabled for the app, or Android will kill the gateway in the background"
+          } > release-notes.md
+
+          echo "Generated release notes:"
+          cat release-notes.md
+
       - name: Create Release
         if: steps.version.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: OpenClaw v${{ steps.version.outputs.version }}
-          body: |
-            ## OpenClaw Android v${{ steps.version.outputs.version }}
-
-            Standalone Android app - no Termux required.
-
-            ### Downloads
-            | File | Description |
-            |------|-------------|
-            | `OpenClaw-v${{ steps.version.outputs.version }}-arm64-v8a.apk` | Most modern Android phones (recommended) |
-            | `OpenClaw-v${{ steps.version.outputs.version }}-armeabi-v7a.apk` | Older 32-bit ARM devices |
-            | `OpenClaw-v${{ steps.version.outputs.version }}-x86_64.apk` | Emulators / x86 devices |
-            | `OpenClaw-v${{ steps.version.outputs.version }}-universal.apk` | All architectures (larger) |
-            | `OpenClaw-v${{ steps.version.outputs.version }}.aab` | Android App Bundle (Play Store) |
-
-            ### First Run
-            1. Install the APK
-            2. Follow the setup wizard (downloads ~500MB Ubuntu rootfs)
-            3. Start the gateway from the dashboard
-            4. Access the web dashboard at `http://127.0.0.1:18789`
-
-            ### Requirements
-            - Android 10+ (API 29)
-            - ~500MB free storage for initial setup
-            - Internet connection for first-time setup
+          body_path: release-notes.md
           files: artifacts/*
           draft: false
           prerelease: false

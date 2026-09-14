@@ -1,13 +1,20 @@
 # Changelog
 
-## v2026.9.14 - Custom Ports, Node Command Policy, Ollama & Toolchain Refresh
+## v2026.9.14 - PRoot Dependency Fix, Custom Ports, Node Command Policy, Ollama
+
+### Setup was broken for new installs
+
+- **Missing PRoot Dependency** - `proot` declares `Depends: libandroid-shmem, libtalloc`, but `scripts/fetch-proot-binaries.sh` only fetched `libtalloc`. Every published APK therefore shipped a `proot` binary the Android dynamic linker refused to load, and setup died immediately with `CANNOT LINK EXECUTABLE ... library "libandroid-shmem.so" not found`. Nothing downstream could run: no rootfs configuration, no Node.js, no OpenClaw. `libandroid-shmem` is now fetched for every ABI, and the CI verification step **fails** (it previously only warned) when any of the four required libraries is missing or placeholder-sized, so a broken APK cannot be published again
 
 ### Bug Fixes
 
 - **Custom Gateway Port Ignored (#124)** - The app hard-coded `18789` in the health check, dashboard URL, token-URL regex, node WebSocket, port probe and notification, so setting `gateway.port` to anything else left the app talking to the wrong address (and eventually declaring a healthy gateway dead). A new `GatewayConfig` service resolves `gateway.port` from `openclaw.json` on every init and start; `GatewayService.kt` reads it natively, passes `--port` explicitly for non-default ports, and reports it in logs and the notification. Token URLs are now matched on any port. The Termux CLI got the same fix via `getGatewayPort()`
 - **Node Commands Were Never Authorised (#81, #95)** - The app wrote `gateway.nodes.allowCommands` / `gateway.nodes.denyCommands`, which OpenClaw does not read. The canonical keys are `gateway.nodes.commands.allow` / `.deny`. Classified commands such as `camera.snap` and `screen.record` were therefore silently unauthorised. Now written correctly, the legacy keys are deleted, and `gateway.nodes.pairing.autoApproveLocal` is set so the local node pairs without manual approval
+- **Setup Looked Frozen (#125)** - The splash screen ran the whole repair path inline: a Node.js download plus `npm install -g openclaw` with a 30 minute timeout, behind a static spinner with no progress, no notification and no foreground service. The app appeared stuck and Android could kill it mid-install, losing all the work. Repair now runs in the setup wizard via `BootstrapService.runRepair()`, with step progress, a progress notification and the wake-lock-holding foreground service, and it skips the ~500MB rootfs download since the rootfs is already present
 - **OpenClaw Install Failure (#133)** - `npm install -g openclaw` aborted with `ENOTEMPTY: rename '/usr/local/lib/node_modules/openclaw' -> '.openclaw-XXXX'` when a previous attempt was interrupted. Stale `openclaw` and `.openclaw-*` directories plus the npm cache temp dir are now removed before installing, and the install retries once after a hard cache clean. Same cleanup added to the Termux CLI installer
-- **EBADENGINE Warning (#133)** - Node.js bumped 22.14.0 → **22.23.2**, satisfying `undici`'s `engines.node >= 22.19.0`
+- **EBADENGINE Warning (#133)** - Node.js bumped 22.14.0 to **22.23.2**, satisfying `undici`'s `engines.node >= 22.19.0`
+- **Dashboard Asked For a Token (#78)** - No `gateway.auth.token` existed on a fresh setup, so the Control UI opened on a manual "Gateway Token" prompt and the node had no credential to present. A persistent token (32 random bytes, hex) is now guaranteed before each start, restoring the tokenised `http://localhost:PORT/#token=...` URL. It never overwrites an existing credential and leaves `password`, `trusted-proxy` and `none` auth modes untouched
+- **Stale Node Token (#94)** - The node cached the gateway auth token and only invalidated it when a remote gateway was configured manually, so a token rotated on a local gateway restart could leave it in a `TOKEN_INVALID` reconnect loop. The cache is now cleared on every gateway start and stop
 - **npm Package Lagged the Repo (#99)** - `lib/index.js` hard-coded `VERSION = '1.7.3'` while the package was 1.8.7. The version is now read from `package.json`, a new `npm-publish.yml` workflow publishes on version change, and tests assert that `package.json`, `pubspec.yaml` and `constants.dart` agree
 
 ### New Features
@@ -15,20 +22,34 @@
 - **Ollama Provider (#117)** - Run local and self-hosted open models with no API key. Configured per upstream requirements: native API base URL (**no `/v1`** - that path breaks tool calling), explicit `api: "ollama"`, a `300s` timeout for cold local models, and provider-qualified model refs (`ollama/qwen3:8b`). The base URL is editable in the app for LAN or Ollama Cloud hosts, and a trailing `/v1` is stripped automatically
 - **Editable Provider Base URL** - Providers that support it expose a Base URL field; the API key field is optional for local runtimes
 
+### Performance
+
+- **Parallel Node.js Download** - The Node.js tarball now downloads while `apt` runs. It previously waited for apt to finish, making two slow phases fully serial
+- **Build Toolchain Deferred** - `python3`, `make` and `g++` (several hundred MB plus a long dpkg run under proot) are no longer installed up front. They are fetched only if npm actually needs to compile a native addon
+- **Leaner apt and npm** - `apt-get update` runs with `Acquire::Languages=none` (skips translation indexes) and `Acquire::Retries=3` for flaky mobile data; npm runs with `--omit=dev --no-audit --no-fund`. The Termux CLI path also drops a blanket `apt upgrade -y` on a freshly downloaded rootfs
+- **Gateway Log Pipeline Was Quadratic** - Every log line copied the entire 500-line buffer (`[..._state.logs, log]`) **and** pushed a new state, rebuilding the log UI once per line; `openclaw gateway --verbose` emits thousands of lines. Replaced with a bounded ring buffer (O(1) amortised) and a 100ms coalesced flush, so rebuilds are bounded by time rather than line count. Token detection stays synchronous so the dashboard URL is never delayed
+- **Faster Status Checks** - `getInstallStatus({ skipProotProbe })` avoids repeated 30 second proot probes during CLI setup
+
 ### Security
 
 - **Credentials Excluded From Backup** - `FlutterSharedPreferences.xml` holds the node Ed25519 private key, the paired device token and the gateway auth token, and was included in Android cloud backup and device transfer. Both are now excluded
 - **SSH Refuses to Expose a Passwordless Root (#107)** - sshd binds `0.0.0.0`, so it is reachable from the whole LAN. It now performs a pre-flight check for a real root password hash in `/etc/shadow` and exits instead of starting, and `PermitEmptyPasswords no` is pinned explicitly
 - **Pairing Code Validated Before Shell Use** - the gateway-supplied pairing code is checked against `^[A-Za-z0-9_-]{4,32}$` before being interpolated into the auto-approve command
-- **Settings Snapshot No Longer Leaks Tokens** - the exported snapshot is written to shared storage; device and gateway tokens are now omitted
+- **Settings Snapshot No Longer Leaks Tokens** - snapshots are written to shared storage; device and gateway tokens are now omitted from both the Settings export and the automatic version-change export
 
 ### Maintenance
 
-- **Toolchain Refresh** - Gradle 8.3 → **8.14.3**, AGP 8.1.0 → **8.11.1**, Kotlin 1.9.0 → **2.2.20**, `compileSdk` 35 → **36**. The project could not build on any current Flutter before this (Gradle 8.3 is below Flutter's 8.7 minimum). CI Flutter pinned 3.24.0 → **3.44.8**. `ndkVersion` added to the plugin subproject defaults so the `jni` plugin configures
-- **Tests** - First Dart test suite (`flutter_app/test/`, 17 tests) covering port resolution, token-URL parsing and the provider contract; npm suite expanded to 16 tests. CI now runs `flutter test` and no longer swallows `flutter analyze` failures
+- **Toolchain Refresh** - Gradle 8.3 to **8.14.3**, AGP 8.1.0 to **8.11.1**, Kotlin 1.9.0 to **2.2.20**, `compileSdk` 35 to **36**. The project could not build on any current Flutter before this (Gradle 8.3 is below Flutter's 8.7 minimum). CI Flutter pinned 3.24.0 to **3.44.8**. `ndkVersion` added to the plugin subproject defaults so the `jni` plugin configures
+- **Tests** - First Dart test suite (`flutter_app/test/`, 25 tests) covering port resolution, token capture including the wrapped-TUI-box reconstruction, the generated token's shape, and the provider contract; npm suite expanded from 11 to 18 tests. CI now runs `flutter test` and no longer swallows `flutter analyze` failures
 - **Analyzer Clean** - Migrated `CardTheme`/`DialogTheme` to `CardThemeData`/`DialogThemeData`, clearing 4 pre-existing errors
+- **AGENTS.md** - New contributor and agent guide: writing style, the Windows/PowerShell environment, build and verify commands, the PRoot binary requirement, and the hard rules (do not rename the application ID, never delete outside `filesDir`, match upstream config keys, do not hard-code port 18789, keep versions in sync)
+- **Style** - Em dashes and en dashes replaced with plain ASCII hyphens across 24 files, enforced by a test. Box-drawing characters in the README diagram and the `_boxDrawing` regexes are untouched
 - **Branding** - All NextGenX references removed from the app, README, privacy policy and release assets
 - **Docs** - README capability table corrected to **9 capabilities / 21 commands** (`battery.status` and `serial.*` were undocumented), structure tree updated, new Gateway Port / SSH / Ollama sections. Privacy policy gained a Node Device Capabilities section disclosing that camera, location, screen and sensor data can reach your configured AI provider
+
+### Verified
+
+Release APK built and installed on a device (Android 15, arm64): setup completed through the full proot to Node.js to OpenClaw path, the gateway came up listening on `127.0.0.1:18789`, the tokenised dashboard URL was present, and the node reported "Connected to gateway". `flutter analyze` reports 0 errors, `flutter test` 25/25, `npm test` 18/18, `eslint` clean.
 
 ---
 
