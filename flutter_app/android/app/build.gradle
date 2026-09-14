@@ -33,6 +33,12 @@ if (keystorePropertiesFile.exists()) {
 def hasKeystore = keystoreProperties.containsKey('storeFile') &&
     file(keystoreProperties['storeFile']).exists()
 
+// F-Droid builds from source and signs with its own key, so a release build
+// must not be signed here. Passing -Pfdroid leaves it unsigned instead of
+// falling back to the debug key, which would make the APK unusable to them.
+// Local builds without -Pfdroid keep the debug fallback so `adb install` works.
+def isFdroidBuild = project.hasProperty('fdroid')
+
 android {
     namespace = "com.nxg.openclawproot"
     compileSdk = 36
@@ -71,7 +77,11 @@ android {
             signingConfig hasKeystore ? signingConfigs.release : signingConfigs.debug
         }
         release {
-            signingConfig hasKeystore ? signingConfigs.release : signingConfigs.debug
+            if (isFdroidBuild) {
+                signingConfig null
+            } else {
+                signingConfig hasKeystore ? signingConfigs.release : signingConfigs.debug
+            }
             minifyEnabled = false
             shrinkResources = false
         }

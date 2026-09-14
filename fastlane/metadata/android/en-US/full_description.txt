@@ -1,0 +1,44 @@
+OpenClaw brings the OpenClaw AI gateway to Android as a standalone app. It sets up a full Ubuntu environment using a bundled PRoot, installs Node.js and the gateway inside it, and gives you a native interface to manage the whole thing. No root, and no Termux install needed.
+
+<b>Features</b>
+
+* One-tap setup that prepares the Ubuntu environment, Node.js and OpenClaw for you
+* Built-in terminal emulator with an extra-keys toolbar, copy and paste, and clickable URLs
+* Start and stop the gateway, with a status indicator, health checks and uptime in a notification
+* Built-in web dashboard, opened with your gateway token already applied
+* Configure API keys and pick models for nine providers, including Ollama for local and self-hosted models
+* Expose Android hardware to the assistant as a paired node: camera, torch, location, screen recording, sensors, haptics, battery and USB serial
+* SSH server for reaching the environment from a computer on your network
+* Real-time log viewer with search
+* Optional extras: Go, Homebrew and OpenSSH
+* Foreground service that keeps the gateway alive in the background
+
+<b>Please read before installing</b>
+
+This app downloads and runs software that is not part of the APK and has not been reviewed by F-Droid. On first setup, and only after you explicitly agree, it fetches roughly 500 MB:
+
+* an Ubuntu base image from cdimage.ubuntu.com
+* the Node.js runtime from nodejs.org
+* the openclaw package and its dependencies from the npm registry
+* Ubuntu packages from archive.ubuntu.com
+
+Setup will not start until you accept this. Nothing is downloaded before then.
+
+<b>Privacy</b>
+
+The app collects nothing. There is no analytics, no telemetry, no crash reporting and no advertising. Your API keys stay on the device, inside the Ubuntu environment.
+
+The gateway itself talks to whichever AI provider you configure. Most of those are proprietary hosted services, so your prompts leave the device and their privacy policies apply. If you would rather avoid that entirely, configure Ollama and point it at a machine you control.
+
+The node feature is off by default. If you turn it on, the assistant can request photos, your location, screen recordings and sensor readings, and that data can be sent to your configured AI provider as part of a request. Android permission prompts still gate every capability, and you can disable the node at any time.
+
+<b>Requirements</b>
+
+* Android 10 or higher
+* Around 500 MB of free storage
+* An internet connection for the initial setup
+* Battery optimisation disabled for the app, otherwise Android will kill the gateway in the background
+
+<b>Licence</b>
+
+MIT. Source code, issue tracker and full changelog are linked from this page.

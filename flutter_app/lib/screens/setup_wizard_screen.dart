@@ -24,6 +24,7 @@ class SetupWizardScreen extends StatefulWidget {
 
 class _SetupWizardScreenState extends State<SetupWizardScreen> {
   bool _started = false;
+  bool _downloadConsent = false;
   Map<String, bool> _pkgStatuses = {};
 
   @override
@@ -140,11 +141,90 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                         label: const Text('Configure API Keys'),
                       ),
                     )
-                  else if (!_started || state.hasError)
+                  else if (!_started || state.hasError) ...[
+                    // F-Droid's inclusion policy requires explicit opt-in
+                    // consent before an app downloads executable code, and
+                    // requires that the user be told they are bypassing
+                    // F-Droid's review. Setup cannot start without this.
+                    if (!_started && !widget.repairMode)
+                      Card(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.download_for_offline_outlined,
+                                      size: 20,
+                                      color: theme.colorScheme.onSurfaceVariant),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'This downloads and runs software that is '
+                                      'not part of the app',
+                                      style: theme.textTheme.titleSmall?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Setup fetches about 500 MB and runs it on your '
+                                'device:',
+                                style: theme.textTheme.bodySmall,
+                              ),
+                              const SizedBox(height: 8),
+                              ...const [
+                                'Ubuntu base image, from cdimage.ubuntu.com',
+                                'Node.js runtime, from nodejs.org',
+                                'openclaw and its dependencies, from the npm registry',
+                                'Ubuntu packages, from archive.ubuntu.com',
+                              ].map((line) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 4),
+                                    child: Text('\u2022  $line',
+                                        style: theme.textTheme.bodySmall),
+                                  )),
+                              const SizedBox(height: 8),
+                              Text(
+                                'These are downloaded directly from their '
+                                'official sources and are not reviewed or '
+                                'verified by whoever distributed this app. '
+                                'Nothing is downloaded until you continue.',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              CheckboxListTile(
+                                value: _downloadConsent,
+                                onChanged: (v) => setState(
+                                    () => _downloadConsent = v ?? false),
+                                controlAffinity:
+                                    ListTileControlAffinity.leading,
+                                contentPadding: EdgeInsets.zero,
+                                dense: true,
+                                title: Text(
+                                  'I understand and want to continue',
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    if (!_started && !widget.repairMode)
+                      const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
-                        onPressed: provider.isRunning
+                        onPressed: (provider.isRunning ||
+                                (!_started &&
+                                    !widget.repairMode &&
+                                    !_downloadConsent))
                             ? null
                             : () {
                                 setState(() => _started = true);
@@ -158,6 +238,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                         label: Text(_started ? 'Retry Setup' : 'Begin Setup'),
                       ),
                     ),
+                  ],
                   if (!_started) ...[
                     const SizedBox(height: 8),
                     Center(

@@ -47,14 +47,14 @@
 
 <table align="center">
   <tr>
-    <td align="center"><img src="assets/dashboard.png" alt="Dashboard" width="220"/><br/><b>Dashboard</b></td>
-    <td align="center"><img src="assets/setupscreen.png" alt="Setup" width="220"/><br/><b>Setup Wizard</b></td>
-    <td align="center"><img src="assets/onboardingscreen.png" alt="Onboarding" width="220"/><br/><b>Onboarding</b></td>
+    <td align="center"><img src="fastlane/metadata/android/en-US/images/phoneScreenshots/01-dashboard.png" alt="Dashboard" width="220"/><br/><b>Dashboard</b></td>
+    <td align="center"><img src="fastlane/metadata/android/en-US/images/phoneScreenshots/02-setupscreen.png" alt="Setup" width="220"/><br/><b>Setup Wizard</b></td>
+    <td align="center"><img src="fastlane/metadata/android/en-US/images/phoneScreenshots/03-onboardingscreen.png" alt="Onboarding" width="220"/><br/><b>Onboarding</b></td>
   </tr>
   <tr>
-    <td align="center"><img src="assets/websscreen.png" alt="Web Dashboard" width="220"/><br/><b>Web Dashboard</b></td>
-    <td align="center"><img src="assets/logscreen.png" alt="Logs" width="220"/><br/><b>Logs</b></td>
-    <td align="center"><img src="assets/settingsscreen.png" alt="Settings" width="220"/><br/><b>Settings</b></td>
+    <td align="center"><img src="fastlane/metadata/android/en-US/images/phoneScreenshots/04-websscreen.png" alt="Web Dashboard" width="220"/><br/><b>Web Dashboard</b></td>
+    <td align="center"><img src="fastlane/metadata/android/en-US/images/phoneScreenshots/05-logscreen.png" alt="Logs" width="220"/><br/><b>Logs</b></td>
+    <td align="center"><img src="fastlane/metadata/android/en-US/images/phoneScreenshots/06-settingsscreen.png" alt="Settings" width="220"/><br/><b>Settings</b></td>
   </tr>
 </table>
 

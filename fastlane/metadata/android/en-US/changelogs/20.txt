@@ -1,0 +1,16 @@
+Setup could not complete on a fresh install in earlier releases: the APK was missing one of PRoot's required libraries, so the environment could never be built. Fixed, and CI now refuses to publish an APK with incomplete PRoot libraries.
+
+Also fixed:
+
+* A custom gateway.port is now honoured everywhere instead of the app assuming 18789
+* Node device commands are actually authorised. The app was writing a config key OpenClaw does not read, so camera and screen recording were never really enabled
+* Setup no longer looks frozen. Long repairs moved off the splash screen into the wizard, with progress and a foreground service
+* The OpenClaw install no longer fails after an interrupted attempt, and Node.js moves to 22.23.2
+* A gateway token is always generated, so the dashboard opens connected instead of asking for one
+* SSH refuses to start without a root password instead of exposing an open port
+
+New: Ollama support for local, LAN and Ollama Cloud models, with no API key needed.
+
+Faster setup: the Node.js download runs in parallel with apt, and the large build toolchain is only installed if it is actually needed.
+
+Security: the node private key and gateway tokens are no longer included in Android cloud backup, and settings snapshots no longer write tokens to shared storage.
