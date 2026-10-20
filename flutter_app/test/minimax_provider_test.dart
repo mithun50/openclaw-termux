@@ -188,6 +188,10 @@ process.stdout.write(written);
       await tester.pumpWidget(const MaterialApp(home: ProvidersScreen()));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(find.text('MiniMax'), 300);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('MiniMax'));
+      await tester.pumpAndSettle();
+      expect(find.text('MiniMax').hitTestable(), findsOneWidget);
       await tester.tap(find.text('MiniMax'));
       await tester.pumpAndSettle();
       if (saved == null) {
