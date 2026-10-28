@@ -10,7 +10,12 @@ class AiProvider {
   final Color color;
   final String baseUrl;
   final List<String> defaultModels;
+
+  /// Previous choices still recognized in saved configurations, never suggested.
+  final List<String> legacyModels;
   final String apiKeyHint;
+
+  Iterable<String> get knownModels => [...defaultModels, ...legacyModels];
 
   /// Explicit OpenClaw provider API flavour (e.g. `ollama`). Written to
   /// `models.providers.<id>.api` when set; omitted otherwise.
@@ -36,6 +41,7 @@ class AiProvider {
     required this.color,
     required this.baseUrl,
     required this.defaultModels,
+    this.legacyModels = const [],
     required this.apiKeyHint,
     this.api,
     this.requiresApiKey = true,
@@ -161,10 +167,12 @@ class AiProvider {
     icon: Icons.all_inclusive,
     color: Color(0xFF8B5CF6),
     baseUrl: 'https://api.minimax.io/v1',
+    api: 'openai-completions',
     defaultModels: [
+      'MiniMax-M3.1-Flash',
       'MiniMax-M3',
-      'MiniMax-M2.7',
     ],
+    legacyModels: ['MiniMax-M2.7'],
     apiKeyHint: 'sk-...',
   );
 

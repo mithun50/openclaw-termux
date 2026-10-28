@@ -34,6 +34,25 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
     }
   }
 
+  String? _minimaxModel(Map<String, dynamic>? config) {
+    final savedModels = (config?['models'] as List?)
+            ?.whereType<Map>()
+            .map((entry) => entry['id'])
+            .whereType<String>()
+            .toList() ??
+        <String>[];
+    final active = _activeModel;
+    if (active != null &&
+        (active.startsWith('minimax/') ||
+            AiProvider.minimax.knownModels.contains(active) ||
+            savedModels.contains(active))) {
+      return active;
+    }
+    // A different provider's active model must not replace this saved choice
+    // or prevent a new MiniMax configuration from using its default.
+    return savedModels.isEmpty ? null : savedModels.first;
+  }
+
   Future<void> _openProvider(AiProvider provider) async {
     final providerConfig = _providers[provider.id] as Map<String, dynamic>?;
     final result = await Navigator.of(context).push<bool>(
@@ -41,7 +60,9 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
         builder: (_) => ProviderDetailScreen(
           provider: provider,
           existingApiKey: providerConfig?['apiKey'] as String?,
-          existingModel: _activeModel,
+          existingModel: provider.id == 'minimax'
+              ? _minimaxModel(providerConfig)
+              : _activeModel,
         ),
       ),
     );
@@ -55,7 +76,7 @@ class _ProvidersScreenState extends State<ProvidersScreen> {
     if (!isConfigured) return '';
     // Check if the active model belongs to this provider
     if (_activeModel != null) {
-      final isActive = provider.defaultModels.any((m) => _activeModel!.contains(m)) ||
+      final isActive = provider.knownModels.any((m) => _activeModel!.contains(m)) ||
           _activeModel!.contains(provider.id);
       if (isActive) return 'Active';
     }

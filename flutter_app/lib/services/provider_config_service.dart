@@ -74,14 +74,19 @@ class ProviderConfigService {
         (baseUrlOverride != null && baseUrlOverride.trim().isNotEmpty)
             ? _normalizeBaseUrl(provider, baseUrlOverride.trim())
             : provider.baseUrl;
+    // Saved MiniMax references already include the provider prefix. The model
+    // entry needs the API model ID, while the active reference keeps its prefix.
+    final modelId = provider.id == 'minimax' && model.startsWith('minimax/')
+        ? model.substring('minimax/'.length)
+        : model;
     // Model refs are provider-qualified for providers with an explicit api
     // flavour (e.g. `ollama/qwen3:8b`).
-    final modelRef = provider.api != null ? '${provider.id}/$model' : model;
+    final modelRef = provider.api != null ? '${provider.id}/$modelId' : modelId;
 
     final providerIdJson = jsonEncode(provider.id);
     final apiKeyJson = jsonEncode(effectiveKey);
     final baseUrlJson = jsonEncode(effectiveBaseUrl);
-    final modelJson = jsonEncode(model);
+    final modelJson = jsonEncode(modelId);
     final modelRefJson = jsonEncode(modelRef);
     final apiJson = provider.api != null ? jsonEncode(provider.api) : null;
     final timeoutJson = provider.timeoutSeconds?.toString();
@@ -121,7 +126,7 @@ fs.writeFileSync(p, JSON.stringify(c, null, 2));
         provider: provider,
         apiKey: effectiveKey,
         baseUrl: effectiveBaseUrl,
-        model: model,
+        model: modelId,
         modelRef: modelRef,
       );
     }
@@ -192,7 +197,7 @@ fs.writeFileSync(p, JSON.stringify(c, null, 2));
     final providerIdJson = jsonEncode(provider.id);
     // Build a list of this provider's known model names so we can clear
     // the active model if it matches one of them.
-    final modelsJson = jsonEncode(provider.defaultModels);
+    final modelsJson = jsonEncode(provider.knownModels.toList());
 
     final script = '''
 const fs = require("fs");

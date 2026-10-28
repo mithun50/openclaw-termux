@@ -31,10 +31,11 @@ void main() {
   });
 
   group('hosted providers keep their existing contract', () {
-    test('all still require an API key and declare no api override', () {
+    test('all still require an API key and preserve their API contract', () {
       for (final provider in AiProvider.all.where((p) => p.id != 'ollama')) {
         expect(provider.requiresApiKey, isTrue, reason: provider.id);
-        expect(provider.api, isNull, reason: provider.id);
+        expect(provider.api, provider.id == 'minimax' ? 'openai-completions' : null,
+            reason: provider.id);
         expect(provider.editableBaseUrl, isFalse, reason: provider.id);
       }
     });
