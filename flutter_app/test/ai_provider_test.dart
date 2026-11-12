@@ -34,7 +34,11 @@ void main() {
     test('all still require an API key and preserve their API contract', () {
       for (final provider in AiProvider.all.where((p) => p.id != 'ollama')) {
         expect(provider.requiresApiKey, isTrue, reason: provider.id);
-        expect(provider.api, provider.id == 'minimax' ? 'openai-completions' : null,
+        expect(
+            provider.api,
+            const {'minimax', 'uberllm'}.contains(provider.id)
+                ? 'openai-completions'
+                : null,
             reason: provider.id);
         expect(provider.editableBaseUrl, isFalse, reason: provider.id);
       }

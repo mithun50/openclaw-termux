@@ -74,11 +74,13 @@ class ProviderConfigService {
         (baseUrlOverride != null && baseUrlOverride.trim().isNotEmpty)
             ? _normalizeBaseUrl(provider, baseUrlOverride.trim())
             : provider.baseUrl;
-    // Saved MiniMax references already include the provider prefix. The model
-    // entry needs the API model ID, while the active reference keeps its prefix.
-    final modelId = provider.id == 'minimax' && model.startsWith('minimax/')
-        ? model.substring('minimax/'.length)
-        : model;
+    // Saved references for providers with an explicit api flavour (MiniMax,
+    // UberLLM) already include the provider prefix. The model entry needs the
+    // API model ID, while the active reference keeps its prefix.
+    final modelId =
+        provider.api != null && model.startsWith('${provider.id}/')
+            ? model.substring(provider.id.length + 1)
+            : model;
     // Model refs are provider-qualified for providers with an explicit api
     // flavour (e.g. `ollama/qwen3:8b`).
     final modelRef = provider.api != null ? '${provider.id}/$modelId' : modelId;

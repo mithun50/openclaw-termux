@@ -176,6 +176,23 @@ class AiProvider {
     apiKeyHint: 'sk-...',
   );
 
+  static const uberllm = AiProvider(
+    id: 'uberllm',
+    name: 'UberLLM',
+    description: 'One prepaid key for DeepSeek, Claude, Gemini and GPT models',
+    icon: Icons.hub,
+    color: Color(0xFF0D9488),
+    baseUrl: 'https://api.uberllm.dev/v1',
+    api: 'openai-completions',
+    defaultModels: [
+      'deepseek/deepseek-v4.1-flash',
+      'anthropic/claude-sonnet-4.6',
+      'google/gemini-3.5-flash',
+      'openai/gpt-5.4-mini',
+    ],
+    apiKeyHint: 'ull_...',
+  );
+
   /// Local/self-hosted Ollama.
   ///
   /// OpenClaw talks to Ollama's **native** API (`/api/chat`), so the base URL
@@ -215,6 +232,7 @@ class AiProvider {
     deepseek,
     xai,
     minimax,
+    uberllm,
     ollama,
   ];
 }
